@@ -1,0 +1,12 @@
+software_mcu_stub:
+  ros__parameters:
+    use_sim_time: true
+    wheel_radius_m: 0.18
+    wheel_separation_m: 0.86
+    wheel_speed_kp_nm_per_rad_s: 0.75
+    max_wheel_effort_nm: 1.5
+    control_rate_hz: 100.0
+    command_timeout_sec: 0.5
+    feedback_timeout_sec: 0.2
+    left_joint_name: left_wheel_joint
+    right_joint_name: right_wheel_joint

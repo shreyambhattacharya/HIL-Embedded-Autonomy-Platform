@@ -1,0 +1,17 @@
+# ROS 2 / colcon workspace outputs
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+
+# ROS and Python runtime files
+.ros/
+__pycache__/
+*.py[cod]
+
+# Local editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

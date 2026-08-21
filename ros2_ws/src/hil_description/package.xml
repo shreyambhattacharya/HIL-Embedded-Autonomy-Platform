@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>hil_description</name>
+  <version>0.1.0</version>
+  <description>Primitive SDF description for the Milestone 1 HIL rover.</description>
+  <maintainer email="maintainers@example.com">HIL Platform Maintainers</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <gazebo_ros>
+      <gazebo_model_path>${prefix}/models</gazebo_model_path>
+    </gazebo_ros>
+  </export>
+</package>
