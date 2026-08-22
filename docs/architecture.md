@@ -41,6 +41,7 @@ The temporary software node occupies the future low-level-controller boundary. I
 
 ```text
 motion_test_node
+        ^ /hil/test/start_motion
         |
         | /hil/control/target_twist
         v
@@ -65,15 +66,31 @@ left/right wheel joints -> rover dynamics
              ros_gz_bridge
 ```
 
-The software controller is deliberately isolated from Gazebo topic names. Its ROS inputs and outputs are the replacement seam for a future Pi-to-STM32 transport adapter. No UART, protocol, FreeRTOS, or fake hardware abstraction is present in this milestone.
+The command source supports normal interactive autostart and test-controlled start through one Trigger service. The software controller is deliberately isolated from Gazebo topic names. Its ROS inputs and outputs are the replacement seam for a future Pi-to-STM32 transport adapter. No UART, protocol, FreeRTOS, or fake hardware abstraction is present in this milestone.
+
+## Milestone 2 characterization overlay
+
+Milestone 2 currently adds observability without changing the control path. When `publish_timing_diagnostics=true`, `software_mcu_stub` publishes steady-clock measurements of its control period and the ages of its latest command and wheel feedback. The default is false, so Milestone 1 interactive and smoke-test behavior is unchanged.
+
+```text
+deterministic command profile -> software_mcu_stub -> wheel effort -> Gazebo
+            |                         |                   |          |
+            +-------------------------+-------------------+----------+
+                                      |
+                                      v
+                         milestone_02_characterization
+                         rates + jitter + response latency
+```
+
+The characterization node observes the boundary; it does not sit in the command or actuator path. It uses the repeatable command steps as excitation. External-force disturbance injection, communication faults, and a transport adapter remain future work.
 
 ## Package ownership
 
 | Package | Responsibility |
 | --- | --- |
 | `hil_description` | Only the primitive-geometry rover model and its SDF assets. |
-| `hil_simulation` | Baseline world, bridge map, launch file, and running-stack smoke test. |
-| `hil_control_stub` | Temporary software MCU controller, deterministic command source, parameters, and mathematical unit tests. |
+| `hil_simulation` | Baseline world, bridge map, interactive/test launch files, smoke test, and timing characterization. |
+| `hil_control_stub` | Temporary software MCU controller, opt-in timing diagnostics, deterministic command source, parameters, and mathematical unit tests. |
 
 ## Coordinate frames
 
@@ -96,6 +113,7 @@ world
 
 | ROS topic | ROS type | Direction | Meaning |
 | --- | --- | --- | --- |
+| `/hil/test/start_motion` | `std_srvs/srv/Trigger` | smoke test -> command source | Starts the one-shot deterministic profile when autostart is disabled. |
 | `/hil/control/target_twist` | `geometry_msgs/msg/Twist` | test source -> stub | Desired body linear velocity and yaw rate. |
 | `/hil/sensors/wheel_states` | `sensor_msgs/msg/JointState` | Gazebo -> stub/test | Left and right wheel position and angular velocity. |
 | `/hil/actuator/left_effort` | `std_msgs/msg/Float64` | stub -> Gazebo | Left wheel joint force in N·m. |
@@ -104,11 +122,21 @@ world
 | `/hil/sensors/scan` | `sensor_msgs/msg/LaserScan` | Gazebo -> ROS | Simulated planar GPU LiDAR at `lidar_link`. |
 | `/hil/ground_truth/odom` | `nav_msgs/msg/Odometry` | Gazebo -> test | Ground-truth 2D pose and twist in `world` / `base_link`. |
 
+Opt-in Milestone 2 diagnostics use `std_msgs/msg/Float64`:
+
+| ROS topic | Meaning |
+| --- | --- |
+| `/hil/diagnostics/control_period_ms` | Steady-clock interval between controller timer callbacks. |
+| `/hil/diagnostics/command_age_ms` | Steady-clock age of the latest valid body command at each control step. |
+| `/hil/diagnostics/feedback_age_ms` | Steady-clock age of the latest valid wheel feedback at each control step. |
+
 The Gazebo-side command topics are `/model/hil_rover/joint/left_wheel_joint/cmd_force` and the corresponding right-wheel topic. Those are implementation details of the bridge, not the controller API.
 
 ## Timing and physics
 
 The baseline world uses a provisional fixed `0.001 s` physics step and a target real-time factor of `1.0`. The controller target update is `100 Hz`; IMU is `100 Hz`; LiDAR is `10 Hz`; ground-truth odometry is `50 Hz`. These are configuration targets, not measured timing results. They must be characterized later on the target machine and under HIL conditions.
+
+The Milestone 2 observer computes topic rates, topic inter-arrival jitter, and target-response latency in simulation time. The controller computes its own period and input ages with `std::chrono::steady_clock`, making those values independent of `/clock`. The first local run is documented in `milestone_02.md`; it is not a portable timing guarantee.
 
 The physics engine is selected by Gazebo's default Harmonic physics configuration (`type="ignored"` in the SDF) while the fixed step, gravity, contact stiffness/damping, wheel radius, wheel separation, mass, and friction are explicit. The project does not claim bit-for-bit determinism.
 The chassis is supported longitudinally by low-friction spherical contacts at x = +/-0.30 m, with the driven wheel contacts at x = 0. All contacts touch the z = 0 plane in the nominal pose. This puts the center-of-mass projection inside the support polygon without adding another driven or controlled joint.

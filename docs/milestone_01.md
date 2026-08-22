@@ -21,9 +21,10 @@ Create a repeatable software-only plant and control boundary that can later be c
 - `hil_simulation/config/bridge.yaml`: only the required ROS/Gazebo topic mappings.
 - `hil_simulation/launch/milestone_01.launch.py`: reproducible stack launch.
 - `hil_control_stub/software_mcu_stub`: wheel kinematics, P control, limits, and temporary stale-data stop behavior.
-- `hil_control_stub/motion_test_node`: fixed time-based command profile.
+- `hil_control_stub/motion_test_node`: fixed time-based command profile with autostart and one-shot Trigger control.
 - `hil_control_stub/test/test_control_math.cpp`: pure unit tests.
-- `hil_simulation/scripts/milestone_01_smoke_test.py`: optional check against a running stack.
+- `hil_simulation/scripts/milestone_01_smoke_test.py`: active readiness, stability, motion-phase, sensor, effort, and stop validator.
+- `hil_simulation/launch/milestone_01_test.launch.py`: self-contained headless integration-test entry point.
 
 ## Motion profile
 
@@ -35,7 +36,7 @@ Create a repeatable software-only plant and control boundary that can later be c
 | 10–15 s | `linear.x = 0.25 m/s` |
 | 15 s onward | zero command |
 
-The profile is deliberately simple. It is not a planner, waypoint follower, obstacle avoidance system, or autonomy stack.
+The profile is deliberately simple. Interactive launch uses `autostart=true`. Automated testing uses `autostart=false` and calls `/hil/test/start_motion` only after subscriptions and stationary checks are ready. It is not a planner, waypoint follower, obstacle avoidance system, or autonomy stack.
 
 ## Launch procedure
 
@@ -48,7 +49,7 @@ source install/setup.bash
 ros2 launch hil_simulation milestone_01.launch.py
 ```
 
-The optional `headless:=true` launch argument passes `-s` to Gazebo and is useful for a server-only smoke run.
+The optional `headless:=true` launch argument passes `-s` to Gazebo. Set `motion_autostart:=false` to keep publishing a zero command for stationary inspection; call `/hil/test/start_motion` to begin the one-shot profile.
 
 ## Interface checks
 
@@ -76,15 +77,15 @@ colcon test --event-handlers console_direct+
 colcon test-result --verbose
 ```
 
-Running-stack smoke test, in a second terminal started soon after launch:
+Self-contained integration test:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 source <repository>/ros2_ws/install/setup.bash
-ros2 run hil_simulation milestone_01_smoke_test
+ros2 launch hil_simulation milestone_01_test.launch.py
 ```
 
-The smoke test watches the required topics, rejects invalid numeric values, accepts the standard LaserScan +Inf no-return sentinel, checks for a non-zero actuator effort, checks for observable ground-truth motion, and checks that effort returns to zero. If Gazebo or ROS 2 is unavailable, the procedure is **NOT RUN**, not a claimed pass.
+The smoke test waits for all required topics and the Trigger service, verifies a stationary zero-effort window, starts the profile, validates phase order, wheel signs, forward displacement, positive yaw, effort bounds, IMU orientation, LiDAR metadata/ranges, odometry, and the final stopped state. Positive infinity remains valid for LiDAR no-return rays; NaN, negative infinity, and out-of-range finite samples fail.
 
 ## Acceptance criteria
 
@@ -95,14 +96,20 @@ The smoke test watches the required topics, rejects invalid numeric values, acce
 - [x] `software_mcu_stub` publishes independent left/right effort values.
 - [x] The rover moves during the commanded phases and stops after the profile.
 - [x] Unit tests pass.
-- [x] The smoke test passes when run against the local stack.
+- [x] Both rover and world SDF files pass `gz sdf -k` with the model search path configured.
+- [x] The rover remains stationary and level before the profile is triggered.
+- [x] The triggered smoke test passes against the self-contained local stack.
 
 The Milestone 1 runtime criteria were verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic; this remains software-only validation.
+
+## Verified observations
+
+The final automated run observed 0.530 m in the first forward phase, 0.196 rad positive yaw during the turn, and 0.423 m in the second forward phase. Peak absolute wheel effort was 1.357 N m under the 1.5 N m limit. The two-second pre-trigger window had 0.0 m measured drift and zero body speed; maximum absolute roll and pitch over the run were approximately 1.1e-7 rad and 5.6e-7 rad. Final body velocity was zero and wheel effort/speed returned to numerical zero.
 
 ## Known limitations
 
 - The selected gains, effort limit, friction, and timing rates are initial engineering parameters, not calibrated values.
-- The smoke test relies on being started while the finite motion profile is still running.
+- The smoke test is deterministic but remains an integration check of a software-only simulation rather than hardware-in-the-loop validation.
 - The Gazebo GUI and GPU LiDAR require a functioning Linux graphics/rendering setup; use the documented headless mode for server-only checks.
 - There is no TF broadcaster in this milestone. Frame IDs are documented and attached to the sensor/odometry messages where the bridge supports them.
 - The ground-truth odometry topic is intentionally available for evaluation and must not be used as a future localization input by accident.

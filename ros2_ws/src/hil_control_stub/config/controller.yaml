@@ -8,5 +8,6 @@ software_mcu_stub:
     control_rate_hz: 100.0
     command_timeout_sec: 0.5
     feedback_timeout_sec: 0.2
+    publish_timing_diagnostics: false
     left_joint_name: left_wheel_joint
     right_joint_name: right_wheel_joint

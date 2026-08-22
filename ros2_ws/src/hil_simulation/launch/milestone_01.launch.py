@@ -105,6 +105,9 @@ def _launch_setup(context, *args, **kwargs):
         parameters=[
             controller_path,
             {"use_sim_time": True},
+            {
+                "publish_timing_diagnostics": LaunchConfiguration("controller_diagnostics")
+            },
         ],
         output="screen",
     )
@@ -116,6 +119,7 @@ def _launch_setup(context, *args, **kwargs):
         parameters=[
             motion_path,
             {"use_sim_time": True},
+            {"autostart": LaunchConfiguration("motion_autostart")},
         ],
         output="screen",
     )
@@ -136,6 +140,16 @@ def generate_launch_description():
                 "headless",
                 default_value="false",
                 description="Run Gazebo server without the GUI when true.",
+            ),
+            DeclareLaunchArgument(
+                "motion_autostart",
+                default_value="true",
+                description="Start the deterministic motion profile automatically.",
+            ),
+            DeclareLaunchArgument(
+                "controller_diagnostics",
+                default_value="false",
+                description="Publish opt-in Milestone 2 controller timing diagnostics.",
             ),
             OpaqueFunction(function=_launch_setup),
         ]

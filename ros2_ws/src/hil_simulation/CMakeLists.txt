@@ -14,4 +14,10 @@ install(
   RENAME milestone_01_smoke_test
 )
 
+install(
+  PROGRAMS scripts/milestone_02_characterization.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME milestone_02_characterization
+)
+
 ament_package()

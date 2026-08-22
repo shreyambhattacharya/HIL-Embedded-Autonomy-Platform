@@ -35,6 +35,7 @@ public:
     control_rate_hz_ = declare_parameter("control_rate_hz", 100.0);
     command_timeout_sec_ = declare_parameter("command_timeout_sec", 0.5);
     feedback_timeout_sec_ = declare_parameter("feedback_timeout_sec", 0.2);
+    publish_timing_diagnostics_ = declare_parameter("publish_timing_diagnostics", false);
     left_joint_name_ = declare_parameter("left_joint_name", std::string("left_wheel_joint"));
     right_joint_name_ = declare_parameter("right_joint_name", std::string("right_wheel_joint"));
 
@@ -61,6 +62,15 @@ public:
     right_effort_publisher_ = create_publisher<std_msgs::msg::Float64>(
       "/hil/actuator/right_effort", rclcpp::QoS(10));
 
+    if (publish_timing_diagnostics_) {
+      control_period_publisher_ = create_publisher<std_msgs::msg::Float64>(
+        "/hil/diagnostics/control_period_ms", rclcpp::QoS(10));
+      command_age_publisher_ = create_publisher<std_msgs::msg::Float64>(
+        "/hil/diagnostics/command_age_ms", rclcpp::QoS(10));
+      feedback_age_publisher_ = create_publisher<std_msgs::msg::Float64>(
+        "/hil/diagnostics/feedback_age_ms", rclcpp::QoS(10));
+    }
+
     const auto period_ms = std::max<std::int64_t>(
       1, static_cast<std::int64_t>(std::llround(1000.0 / control_rate_hz_)));
     control_timer_ = create_wall_timer(
@@ -86,6 +96,7 @@ private:
     target_linear_m_s_ = message->linear.x;
     target_yaw_rad_s_ = message->angular.z;
     last_command_time_ = now();
+    last_command_steady_time_ = std::chrono::steady_clock::now();
     have_command_ = true;
   }
 
@@ -115,6 +126,7 @@ private:
     left_measured_rad_s_ = message->velocity[left_index];
     right_measured_rad_s_ = message->velocity[right_index];
     last_feedback_time_ = now();
+    last_feedback_steady_time_ = std::chrono::steady_clock::now();
     have_feedback_ = true;
   }
 
@@ -133,8 +145,38 @@ private:
     right_effort_publisher_->publish(right_message);
   }
 
+  void publish_timing(const std::chrono::steady_clock::time_point current_time)
+  {
+    if (!publish_timing_diagnostics_) {
+      return;
+    }
+
+    if (have_last_control_step_) {
+      std_msgs::msg::Float64 period_message;
+      period_message.data = std::chrono::duration<double, std::milli>(
+        current_time - last_control_steady_time_).count();
+      control_period_publisher_->publish(period_message);
+    }
+    last_control_steady_time_ = current_time;
+    have_last_control_step_ = true;
+
+    if (have_command_) {
+      std_msgs::msg::Float64 age_message;
+      age_message.data = std::chrono::duration<double, std::milli>(
+        current_time - last_command_steady_time_).count();
+      command_age_publisher_->publish(age_message);
+    }
+    if (have_feedback_) {
+      std_msgs::msg::Float64 age_message;
+      age_message.data = std::chrono::duration<double, std::milli>(
+        current_time - last_feedback_steady_time_).count();
+      feedback_age_publisher_->publish(age_message);
+    }
+  }
+
   void control_step()
   {
+    publish_timing(std::chrono::steady_clock::now());
     const auto current_time = now();
     const bool input_fresh = have_command_ && have_feedback_ &&
       fresh(current_time, last_command_time_, command_timeout_sec_) &&
@@ -164,6 +206,7 @@ private:
   double control_rate_hz_{0.0};
   double command_timeout_sec_{0.0};
   double feedback_timeout_sec_{0.0};
+  bool publish_timing_diagnostics_{false};
   std::string left_joint_name_;
   std::string right_joint_name_;
 
@@ -175,11 +218,18 @@ private:
   bool have_feedback_{false};
   rclcpp::Time last_command_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_feedback_time_{0, 0, RCL_ROS_TIME};
+  std::chrono::steady_clock::time_point last_command_steady_time_;
+  std::chrono::steady_clock::time_point last_feedback_steady_time_;
+  std::chrono::steady_clock::time_point last_control_steady_time_;
+  bool have_last_control_step_{false};
 
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr target_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr wheel_subscription_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_effort_publisher_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_effort_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr control_period_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr command_age_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr feedback_age_publisher_;
   rclcpp::TimerBase::SharedPtr control_timer_;
 };
 
