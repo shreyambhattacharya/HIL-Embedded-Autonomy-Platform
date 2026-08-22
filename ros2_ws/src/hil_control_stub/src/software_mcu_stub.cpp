@@ -69,6 +69,8 @@ public:
         "/hil/diagnostics/command_age_ms", rclcpp::QoS(10));
       feedback_age_publisher_ = create_publisher<std_msgs::msg::Float64>(
         "/hil/diagnostics/feedback_age_ms", rclcpp::QoS(10));
+      control_execution_publisher_ = create_publisher<std_msgs::msg::Float64>(
+        "/hil/diagnostics/control_execution_ms", rclcpp::QoS(10));
     }
 
     const auto period_ms = std::max<std::int64_t>(
@@ -174,9 +176,21 @@ private:
     }
   }
 
+  void publish_control_execution(
+    const std::chrono::steady_clock::time_point execution_start)
+  {
+    if (publish_timing_diagnostics_) {
+      std_msgs::msg::Float64 execution_message;
+      execution_message.data = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - execution_start).count();
+      control_execution_publisher_->publish(execution_message);
+    }
+  }
+
   void control_step()
   {
     publish_timing(std::chrono::steady_clock::now());
+    const auto execution_start = std::chrono::steady_clock::now();
     const auto current_time = now();
     const bool input_fresh = have_command_ && have_feedback_ &&
       fresh(current_time, last_command_time_, command_timeout_sec_) &&
@@ -187,6 +201,7 @@ private:
       RCLCPP_WARN_THROTTLE(
         get_logger(), *get_clock(), 2000,
         "command or wheel feedback is stale; temporary safety behavior is zero effort");
+      publish_control_execution(execution_start);
       return;
     }
 
@@ -197,6 +212,7 @@ private:
     const auto right_effort = hil_control_stub::limited_p_effort(
       targets.right_rad_s, right_measured_rad_s_, wheel_speed_kp_nm_per_rad_s_, max_wheel_effort_nm_);
     publish_efforts(left_effort, right_effort);
+    publish_control_execution(execution_start);
   }
 
   double wheel_radius_m_{0.0};
@@ -230,6 +246,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr control_period_publisher_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr command_age_publisher_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr feedback_age_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr control_execution_publisher_;
   rclcpp::TimerBase::SharedPtr control_timer_;
 };
 

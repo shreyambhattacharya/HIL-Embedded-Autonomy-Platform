@@ -5,7 +5,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import (
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    RegisterEventHandler,
+    TimerAction,
+)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
@@ -26,6 +31,13 @@ def generate_launch_description():
             "motion_autostart": "false",
         }.items(),
     )
+    discovery_warmup = TimerAction(
+        period=3.0,
+        actions=[
+            ExecuteProcess(cmd=["ros2", "node", "list"], output="log")
+        ],
+    )
+
     smoke_test = Node(
         package="hil_simulation",
         executable="milestone_01_smoke_test",
@@ -55,4 +67,4 @@ def generate_launch_description():
             on_exit=[stop_gazebo],
         )
     )
-    return LaunchDescription([stack, smoke_test, stop_after_test])
+    return LaunchDescription([stack, discovery_warmup, smoke_test, stop_after_test])

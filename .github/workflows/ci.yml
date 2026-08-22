@@ -1,0 +1,40 @@
+name: Build and unit tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ros-build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+
+      - name: Build workspace and run package tests
+        uses: ros-tooling/action-ros-ci@v0.4
+        with:
+          package-name: hil_control_stub hil_description hil_simulation
+          target-ros2-distro: jazzy
+          colcon-defaults: |
+            {
+              "build": {
+                "symlink-install": true,
+                "cmake-args": ["-DBUILD_TESTING=ON"]
+              }
+            }
+
+      - name: Run characterization tooling unit tests
+        run: python3 -m unittest discover -s tools/tests -v
+
+      # Gazebo integration remains a local/manual gate. Hosted runners do not
+      # provide a sufficiently reliable graphics/runtime environment for this
+      # characterization to be a useful merge signal.

@@ -1,0 +1,238 @@
+{
+  "aggregates": {
+    "command_age_median_ms": {
+      "maximum": 27.655616,
+      "mean": 24.8270628,
+      "median": 24.744117000000003,
+      "minimum": 22.399155,
+      "p95_across_runs": 27.655616,
+      "samples": 10,
+      "standard_deviation": 1.4627148001201806,
+      "unit": "ms"
+    },
+    "command_age_p95_ms": {
+      "maximum": 47.705326,
+      "mean": 44.8736081,
+      "median": 44.7798415,
+      "minimum": 42.438377,
+      "p95_across_runs": 47.705326,
+      "samples": 10,
+      "standard_deviation": 1.4643274483373996,
+      "unit": "ms"
+    },
+    "control_execution_max_ms": {
+      "maximum": 1.081581,
+      "mean": 0.780475,
+      "median": 0.797403,
+      "minimum": 0.551536,
+      "p95_across_runs": 1.081581,
+      "samples": 10,
+      "standard_deviation": 0.17019981617498883,
+      "unit": "ms"
+    },
+    "control_execution_median_ms": {
+      "maximum": 0.149002,
+      "mean": 0.129017,
+      "median": 0.12577300000000002,
+      "minimum": 0.106863,
+      "p95_across_runs": 0.149002,
+      "samples": 10,
+      "standard_deviation": 0.012211638355819966,
+      "unit": "ms"
+    },
+    "control_execution_p95_ms": {
+      "maximum": 0.31015,
+      "mean": 0.2870099,
+      "median": 0.28219099999999997,
+      "minimum": 0.270842,
+      "p95_across_runs": 0.31015,
+      "samples": 10,
+      "standard_deviation": 0.012820261433025107,
+      "unit": "ms"
+    },
+    "controller_period_max_ms": {
+      "maximum": 19.159526,
+      "mean": 12.7788833,
+      "median": 11.963783,
+      "minimum": 10.448507,
+      "p95_across_runs": 19.159526,
+      "samples": 10,
+      "standard_deviation": 2.7845143347553467,
+      "unit": "ms"
+    },
+    "controller_period_median_ms": {
+      "maximum": 10.000513,
+      "mean": 9.9997828,
+      "median": 9.9998835,
+      "minimum": 9.999135,
+      "p95_across_runs": 10.000513,
+      "samples": 10,
+      "standard_deviation": 0.0004336639251769577,
+      "unit": "ms"
+    },
+    "controller_period_p95_ms": {
+      "maximum": 10.088001,
+      "mean": 10.0753689,
+      "median": 10.075258000000002,
+      "minimum": 10.059364,
+      "p95_across_runs": 10.088001,
+      "samples": 10,
+      "standard_deviation": 0.009003378778732722,
+      "unit": "ms"
+    },
+    "feedback_age_median_ms": {
+      "maximum": 0.821346,
+      "mean": 0.6026043999999999,
+      "median": 0.571983,
+      "minimum": 0.406236,
+      "p95_across_runs": 0.821346,
+      "samples": 10,
+      "standard_deviation": 0.13087136884165645,
+      "unit": "ms"
+    },
+    "feedback_age_p95_ms": {
+      "maximum": 1.140522,
+      "mean": 1.0445541999999999,
+      "median": 1.038405,
+      "minimum": 0.949953,
+      "p95_across_runs": 1.140522,
+      "samples": 10,
+      "standard_deviation": 0.051344367939109604,
+      "unit": "ms"
+    },
+    "imu_rate_hz": {
+      "maximum": 100.0058826989823,
+      "mean": 100.00058875351422,
+      "median": 100.0,
+      "minimum": 99.99412145082594,
+      "p95_across_runs": 100.0058826989823,
+      "samples": 10,
+      "standard_deviation": 0.004337752399323464,
+      "unit": "Hz"
+    },
+    "left_effort_rate_hz": {
+      "maximum": 100.97566709768427,
+      "mean": 100.42430167979828,
+      "median": 100.29698116243088,
+      "minimum": 100.13531799729364,
+      "p95_across_runs": 100.97566709768427,
+      "samples": 10,
+      "standard_deviation": 0.28524768459732874,
+      "unit": "Hz"
+    },
+    "minimum_observed_margin_ms": {
+      "maximum": 9.448464,
+      "mean": 9.219525,
+      "median": 9.202597,
+      "minimum": 8.918419,
+      "p95_across_runs": 9.448464,
+      "samples": 10,
+      "standard_deviation": 0.1701998161749886,
+      "unit": "ms"
+    },
+    "odometry_rate_hz": {
+      "maximum": 50.008835483300935,
+      "mean": 50.00088430868129,
+      "median": 50.0,
+      "minimum": 49.99706245226485,
+      "p95_across_runs": 50.008835483300935,
+      "samples": 10,
+      "standard_deviation": 0.0034125128208737122,
+      "unit": "Hz"
+    },
+    "right_effort_rate_hz": {
+      "maximum": 100.97566709768427,
+      "mean": 100.42489334277998,
+      "median": 100.29403116730373,
+      "minimum": 100.14120969639916,
+      "p95_across_runs": 100.97566709768427,
+      "samples": 10,
+      "standard_deviation": 0.28548586099751627,
+      "unit": "Hz"
+    },
+    "scan_rate_hz": {
+      "maximum": 10.004708097928438,
+      "mean": 9.99999587828208,
+      "median": 10.0,
+      "minimum": 9.99467739073866,
+      "p95_across_runs": 10.004708097928438,
+      "samples": 10,
+      "standard_deviation": 0.0028890739488308934,
+      "unit": "Hz"
+    },
+    "target_to_effort_ms": {
+      "maximum": 11.999999999999567,
+      "mean": 5.899999999999839,
+      "median": 5.0000000000003375,
+      "minimum": 3.0000000000001137,
+      "p95_across_runs": 11.999999999999567,
+      "samples": 10,
+      "standard_deviation": 2.766867462592755,
+      "unit": "ms"
+    },
+    "target_to_wheel_motion_ms": {
+      "maximum": 25.9999999999998,
+      "mean": 23.20000000000002,
+      "median": 23.00000000000013,
+      "minimum": 20.999999999999908,
+      "p95_across_runs": 25.9999999999998,
+      "samples": 10,
+      "standard_deviation": 1.549193338482809,
+      "unit": "ms"
+    },
+    "target_twist_rate_hz": {
+      "maximum": 20.196667255490784,
+      "mean": 20.08509955321146,
+      "median": 20.060102505459472,
+      "minimum": 20.025915891153254,
+      "p95_across_runs": 20.196667255490784,
+      "samples": 10,
+      "standard_deviation": 0.05721814471290109,
+      "unit": "Hz"
+    },
+    "wheel_states_rate_hz": {
+      "maximum": 1000.0587958607714,
+      "mean": 997.4390033490705,
+      "median": 998.386024497981,
+      "minimum": 994.3011573938076,
+      "p95_across_runs": 1000.0587958607714,
+      "samples": 10,
+      "standard_deviation": 2.0314237551496555,
+      "unit": "Hz"
+    }
+  },
+  "configuration": {
+    "controlled_load": {
+      "configuration": null,
+      "tool": null
+    },
+    "fresh_gazebo_per_run": true,
+    "mode": "normal",
+    "run_timeout_sec": 120,
+    "runs_requested": 10
+  },
+  "counts": {
+    "attempted": 10,
+    "failed": 0,
+    "invalid": 0,
+    "passed": 10
+  },
+  "result": "PASS",
+  "schema_version": 1,
+  "suite_metadata": {
+    "available_memory_kib_at_start": 15248412,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 155H",
+    "execution_environment": "WSL",
+    "gazebo_version": "Gazebo Sim, version 8.11.0\nCopyright (C) 2018 Open Source Robotics Foundation.\nReleased under the Apache 2.0 License.",
+    "git": {
+      "commit_sha": "2f2c483618bafd5f2f046dc6bdd24077a239545c",
+      "working_tree": "dirty"
+    },
+    "hostname": "shreyam2024",
+    "kernel_release": "6.18.33.2-microsoft-standard-WSL2",
+    "logical_cpu_count": 22,
+    "os_pretty_name": "Ubuntu 24.04.4 LTS",
+    "ros_distro": "jazzy",
+    "timestamp_utc": "2026-08-22T07:47:20.858909+00:00"
+  }
+}

@@ -2,7 +2,7 @@
 
 This repository is the starting point for a Hardware-in-the-Loop (HIL) embedded autonomy platform. The long-term system will partition high-level autonomy on a Raspberry Pi 5, real-time wheel control and safety on an STM32 with FreeRTOS, and the simulated physical plant on a laptop running Gazebo.
 
-The project is intentionally being built in milestones. **Milestone 1 — Deterministic Simulation Foundation** is validated, and **Milestone 2 — Software Boundary Characterization** has started. The current Milestone 2 slice measures the existing boundary before introducing transport or fault infrastructure. It does not contain hardware or claim hardware validation.
+The project is intentionally being built in milestones. **Milestone 1 — Deterministic Simulation Foundation** is validated, and **Milestone 2B — Repeatability Characterization and Transport Requirements** is complete on the local software-only host. It measures the existing boundary before introducing transport or fault infrastructure. It does not contain hardware or claim hardware validation.
 
 ## Implemented foundation
 
@@ -24,7 +24,10 @@ The first Milestone 2 slice adds:
 - a self-contained characterization launch using the same deterministic command profile;
 - measured ROS topic rates and inter-arrival jitter;
 - observed target-to-effort and target-to-wheel-motion latency;
-- explicit host-specific acceptance thresholds and machine-readable JSON output.
+- controller execution-time and execution-budget diagnostics;
+- isolated multi-run suites with retained failures and machine-readable aggregates;
+- 10-run normal and controlled-load baselines;
+- provisional Pi/STM32 transport requirements and analytical UART budgets.
 
 Not implemented yet: versioned Pi/STM32 transport, Raspberry Pi software, UART, STM32 firmware, FreeRTOS, binary protocols, watchdogs, physical disturbance or fault injection, cameras, ML, localization, planning, Nav2, and HIL hardware testing.
 
@@ -32,9 +35,13 @@ Not implemented yet: versioned Pi/STM32 transport, Raspberry Pi software, UART, 
 
 ```text
 docs/
+  milestone_02_repeatability.md
   architecture.md
   milestone_01.md
   milestone_02.md
+  transport_requirements.md
+results/milestone_02/   Checked-in aggregate evidence; ignored local raw logs
+tools/                  Repeatability runner and pure Python unit tests
 ros2_ws/src/
   hil_description/     Rover SDF model and model assets
   hil_simulation/      Baseline world, bridge, launch, smoke test
@@ -126,6 +133,28 @@ ros2 launch hil_simulation milestone_02_characterization.launch.py
 
 This launch enables controller timing diagnostics only for the characterization run. It reports JSON metrics, applies broad regression thresholds, and shuts Gazebo down automatically. Topic intervals and response latency use simulation time; controller period and input-age measurements use a steady wall clock inside the controller.
 
+Run fresh-process repeatability suites from the repository root:
+
+```bash
+python3 tools/run_characterization_suite.py \
+  --runs 10 \
+  --mode normal \
+  --evidence-output results/milestone_02/normal_summary.json
+
+python3 tools/run_characterization_suite.py \
+  --runs 10 \
+  --max-attempts 12 \
+  --mode cpu-loaded \
+  --stress-workers 4 \
+  --evidence-output results/milestone_02/cpu_loaded_summary.json
+```
+
+The loaded runner uses `stress-ng` when installed and otherwise falls back to pinned standard `taskset` + `yes` workers. Its JSON records which tool and configuration were actually used; configured capacity is not reported as measured CPU utilization. Raw run JSON and logs are kept under `results/milestone_02/local/` and are ignored by Git. Run the runner's pure Python tests with:
+
+```bash
+python3 -m unittest discover -s tools/tests -v
+```
+
 Useful inspection commands while the stack is running:
 
 ```bash
@@ -139,6 +168,6 @@ ros2 topic echo /hil/actuator/left_effort
 
 ## Engineering status
 
-The Milestone 1 build, 11-case control-math suite, SDF validation, Gazebo GUI/headless launch, ROS/Gazebo bridges, triggered deterministic profile, stationary state, and automated smoke test have been verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic. The first Milestone 2 characterization run also passed and established an initial local timing baseline. These are software-only, host-specific observations; no hardware or portable benchmark result is implied.
+The Milestone 1 build, control-math suite, SDF validation, Gazebo GUI/headless launch, ROS/Gazebo bridges, triggered deterministic profile, stationary state, and automated smoke test have been verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic. Milestone 2B completed 10 normal and 10 moderate controlled-load fresh-Gazebo runs with all selected trials passing. These are software-only, host-specific observations; no hardware, real-time guarantee, or portable benchmark result is implied.
 
-See [docs/architecture.md](docs/architecture.md), [docs/milestone_01.md](docs/milestone_01.md), and [docs/milestone_02.md](docs/milestone_02.md) for the runtime boundary, parameters, interfaces, acceptance criteria, measurements, and limitations.
+See [docs/architecture.md](docs/architecture.md), [docs/milestone_01.md](docs/milestone_01.md), [docs/milestone_02.md](docs/milestone_02.md), [docs/milestone_02_repeatability.md](docs/milestone_02_repeatability.md), and [docs/transport_requirements.md](docs/transport_requirements.md) for the runtime boundary, parameters, interfaces, measurements, derived requirements, and limitations.

@@ -5,9 +5,16 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    RegisterEventHandler,
+    TimerAction,
+)
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -23,11 +30,25 @@ def generate_launch_description():
             "controller_diagnostics": "true",
         }.items(),
     )
+    discovery_warmup = TimerAction(
+        period=3.0,
+        actions=[
+            ExecuteProcess(cmd=["ros2", "node", "list"], output="log")
+        ],
+    )
+
     characterization = Node(
         package="hil_simulation",
         executable="milestone_02_characterization",
         name="milestone_02_characterization",
-        parameters=[{"use_sim_time": True}],
+        parameters=[
+            {
+                "use_sim_time": True,
+                "result_path": LaunchConfiguration("result_path"),
+                "run_id": LaunchConfiguration("run_id"),
+                "test_mode": LaunchConfiguration("test_mode"),
+            }
+        ],
         output="screen",
     )
     stop_gazebo = ExecuteProcess(
@@ -54,5 +75,25 @@ def generate_launch_description():
         )
     )
     return LaunchDescription(
-        [stack, characterization, stop_after_characterization]
+        [
+            DeclareLaunchArgument(
+                "result_path",
+                default_value="",
+                description="Optional absolute path for the schema-versioned run JSON.",
+            ),
+            DeclareLaunchArgument(
+                "run_id",
+                default_value="single",
+                description="Identifier recorded in run metadata.",
+            ),
+            DeclareLaunchArgument(
+                "test_mode",
+                default_value="normal",
+                description="Environment mode recorded in run metadata.",
+            ),
+            stack,
+            characterization,
+            discovery_warmup,
+            stop_after_characterization,
+        ]
     )

@@ -70,7 +70,7 @@ The command source supports normal interactive autostart and test-controlled sta
 
 ## Milestone 2 characterization overlay
 
-Milestone 2 currently adds observability without changing the control path. When `publish_timing_diagnostics=true`, `software_mcu_stub` publishes steady-clock measurements of its control period and the ages of its latest command and wheel feedback. The default is false, so Milestone 1 interactive and smoke-test behavior is unchanged.
+Milestone 2 adds observability without changing the control path. When `publish_timing_diagnostics=true`, `software_mcu_stub` publishes steady-clock measurements of its control period, controller execution duration, and the ages of its latest command and wheel feedback. The default is false, so Milestone 1 interactive and smoke-test behavior is unchanged.
 
 ```text
 deterministic command profile -> software_mcu_stub -> wheel effort -> Gazebo
@@ -82,7 +82,9 @@ deterministic command profile -> software_mcu_stub -> wheel effort -> Gazebo
                          rates + jitter + response latency
 ```
 
-The characterization node observes the boundary; it does not sit in the command or actuator path. It uses the repeatable command steps as excitation. External-force disturbance injection, communication faults, and a transport adapter remain future work.
+The characterization node observes the boundary; it does not sit in the command or actuator path. It uses the repeatable command steps as excitation. The repository-level suite runner creates a fresh launch per attempt, reads a result file rather than scraping console text, retains PASS/FAIL/INVALID records, and aggregates only valid passing run values while preserving the other attempts in the full local summary.
+
+A pre-measurement ROS graph query warms Fast DDS endpoint discovery in this WSL environment before readiness is evaluated. This is discovery stabilization, not part of the measured control path. External-force disturbance injection, communication faults, and a transport adapter remain future work.
 
 ## Package ownership
 
@@ -127,6 +129,7 @@ Opt-in Milestone 2 diagnostics use `std_msgs/msg/Float64`:
 | ROS topic | Meaning |
 | --- | --- |
 | `/hil/diagnostics/control_period_ms` | Steady-clock interval between controller timer callbacks. |
+| `/hil/diagnostics/control_execution_ms` | Steady-clock duration of decision, kinematics, limiting, and effort publication within one control step. |
 | `/hil/diagnostics/command_age_ms` | Steady-clock age of the latest valid body command at each control step. |
 | `/hil/diagnostics/feedback_age_ms` | Steady-clock age of the latest valid wheel feedback at each control step. |
 
@@ -136,7 +139,7 @@ The Gazebo-side command topics are `/model/hil_rover/joint/left_wheel_joint/cmd_
 
 The baseline world uses a provisional fixed `0.001 s` physics step and a target real-time factor of `1.0`. The controller target update is `100 Hz`; IMU is `100 Hz`; LiDAR is `10 Hz`; ground-truth odometry is `50 Hz`. These are configuration targets, not measured timing results. They must be characterized later on the target machine and under HIL conditions.
 
-The Milestone 2 observer computes topic rates, topic inter-arrival jitter, and target-response latency in simulation time. The controller computes its own period and input ages with `std::chrono::steady_clock`, making those values independent of `/clock`. The first local run is documented in `milestone_02.md`; it is not a portable timing guarantee.
+The Milestone 2 observer computes topic rates, topic inter-arrival jitter, and target-response latency in simulation time. The controller computes its own period, execution duration, and input ages with `std::chrono::steady_clock`, making those values independent of `/clock`. Repeatability distributions and their host/load metadata are documented in `milestone_02.md`; they are not portable timing guarantees. Future transport safety timers must use endpoint-local monotonic time, as defined in `transport_requirements.md`.
 
 The physics engine is selected by Gazebo's default Harmonic physics configuration (`type="ignored"` in the SDF) while the fixed step, gravity, contact stiffness/damping, wheel radius, wheel separation, mass, and friction are explicit. The project does not claim bit-for-bit determinism.
 The chassis is supported longitudinally by low-friction spherical contacts at x = +/-0.30 m, with the driven wheel contacts at x = 0. All contacts touch the z = 0 plane in the nominal pose. This puts the center-of-mass projection inside the support polygon without adding another driven or controlled joint.

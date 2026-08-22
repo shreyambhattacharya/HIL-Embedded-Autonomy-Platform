@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Measure the Milestone 2 software boundary under repeatable command excitation."""
 
+from datetime import UTC, datetime
 import json
 import math
+from pathlib import Path
+import socket
 import sys
 import time
 
@@ -70,6 +73,9 @@ class TopicStats:
 class CharacterizationNode(Node):
     def __init__(self):
         super().__init__("milestone_02_characterization")
+        self.result_path = str(self.declare_parameter("result_path", "").value)
+        self.run_id = str(self.declare_parameter("run_id", "single").value)
+        self.test_mode = str(self.declare_parameter("test_mode", "normal").value)
         self.stats = {
             "target_twist": TopicStats(20.0),
             "wheel_states": TopicStats(),
@@ -82,6 +88,7 @@ class CharacterizationNode(Node):
         self.control_period_ms = []
         self.command_age_ms = []
         self.feedback_age_ms = []
+        self.control_execution_ms = []
         self.invalid_diagnostic = False
         self.triggered = False
         self.saw_active_command = False
@@ -143,6 +150,14 @@ class CharacterizationNode(Node):
                 Float64,
                 "/hil/diagnostics/feedback_age_ms",
                 lambda message: self.record_diagnostic(self.feedback_age_ms, message.data),
+                10,
+            ),
+            self.create_subscription(
+                Float64,
+                "/hil/diagnostics/control_execution_ms",
+                lambda message: self.record_diagnostic(
+                    self.control_execution_ms, message.data
+                ),
                 10,
             ),
         ]
@@ -241,6 +256,9 @@ class CharacterizationNode(Node):
                 for name, count in minimum_samples.items()
             )
             and len(self.control_period_ms) >= 5
+            and len(self.command_age_ms) >= 5
+            and len(self.feedback_age_ms) >= 5
+            and len(self.control_execution_ms) >= 5
             and self.start_client.service_is_ready()
         )
 
@@ -250,6 +268,7 @@ class CharacterizationNode(Node):
         self.control_period_ms.clear()
         self.command_age_ms.clear()
         self.feedback_age_ms.clear()
+        self.control_execution_ms.clear()
         self.triggered = True
 
 
@@ -276,14 +295,62 @@ def numeric_summary(values, target=None):
     return result
 
 
+def build_result_document(node, metrics, result, failures, failure_category=None):
+    return {
+        "schema_version": 1,
+        "run_metadata": {
+            "run_id": node.run_id,
+            "test_mode": node.test_mode,
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "hostname": socket.gethostname(),
+            "clock_domains": {
+                "topic_and_response": "gazebo_simulation_time",
+                "controller_timing": "steady_wall_clock",
+            },
+        },
+        "topics": metrics.get("topics", {}),
+        "controller_timing": metrics.get("controller_timing", {}),
+        "controller_budget": metrics.get("controller_budget", {}),
+        "response_latency_ms": metrics.get("response_latency_ms", {}),
+        "stationary": metrics.get("stationary", {}),
+        "result": result,
+        "failure_category": failure_category,
+        "failures": failures,
+    }
+
+
+def emit_result(node, document):
+    serialized = json.dumps(document, indent=2, sort_keys=True)
+    print(serialized)
+    if not node.result_path:
+        return
+    output_path = Path(node.result_path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    temporary_path.write_text(serialized + "\n", encoding="utf-8")
+    temporary_path.replace(output_path)
+
+
 def main():
     rclpy.init()
     node = CharacterizationNode()
     failures = []
     metrics = {}
+    document = None
     try:
-        if not spin_until(node, node.ready, 30.0):
-            raise RuntimeError("required topics, diagnostics, or Trigger service were not ready")
+        if not spin_until(node, node.ready, 60.0):
+            readiness_snapshot = {
+                "topics": {
+                    name: len(statistic.times)
+                    for name, statistic in node.stats.items()
+                },
+                "control_period": len(node.control_period_ms),
+                "command_age": len(node.command_age_ms),
+                "feedback_age": len(node.feedback_age_ms),
+                "control_execution": len(node.control_execution_ms),
+                "trigger_service": node.start_client.service_is_ready(),
+            }
+            raise RuntimeError(f"interfaces not ready: {json.dumps(readiness_snapshot, sort_keys=True)}")
 
         stationary_start = node.now_seconds()
         if not spin_until(
@@ -311,10 +378,27 @@ def main():
         metrics["topics"] = {
             name: statistic.summarize() for name, statistic in node.stats.items()
         }
+        execution_summary = numeric_summary(node.control_execution_ms)
         metrics["controller_timing"] = {
             "control_period": numeric_summary(node.control_period_ms, 10.0),
             "command_age": numeric_summary(node.command_age_ms),
             "feedback_age": numeric_summary(node.feedback_age_ms),
+            "control_execution": execution_summary,
+        }
+        metrics["controller_budget"] = {
+            "nominal_period_ms": 10.0,
+            "median_execution_utilization_percent": (
+                execution_summary["median_ms"] / 10.0 * 100.0
+                if execution_summary["median_ms"] is not None else None
+            ),
+            "p95_execution_utilization_percent": (
+                execution_summary["p95_ms"] / 10.0 * 100.0
+                if execution_summary["p95_ms"] is not None else None
+            ),
+            "minimum_observed_margin_ms": (
+                10.0 - execution_summary["max_ms"]
+                if execution_summary["max_ms"] is not None else None
+            ),
         }
         metrics["response_latency_ms"] = {
             "target_to_effort": (
@@ -354,6 +438,10 @@ def main():
             failures.append("insufficient controller timing samples")
         if control_period["p95_ms"] is None or control_period["p95_ms"] > 20.0:
             failures.append("controller period p95 exceeded 20 ms")
+        if execution_summary["samples"] < 100:
+            failures.append("insufficient controller execution-time samples")
+        if execution_summary["p95_ms"] is None or execution_summary["p95_ms"] > 10.0:
+            failures.append("controller execution-time p95 exceeded the nominal 10 ms period")
         if node.command_age_ms and percentile(node.command_age_ms, 0.95) > 100.0:
             failures.append("command age p95 exceeded 100 ms")
         if node.feedback_age_ms and percentile(node.feedback_age_ms, 0.95) > 100.0:
@@ -374,16 +462,26 @@ def main():
         if node.invalid_wheel_feedback:
             failures.append("invalid wheel feedback was observed")
 
-        print(json.dumps(metrics, indent=2, sort_keys=True))
         if failures:
+            document = build_result_document(
+                node, metrics, "FAIL", failures, "regression"
+            )
+            emit_result(node, document)
             for failure in failures:
                 node.get_logger().error(failure)
             print("MILESTONE 2 CHARACTERIZATION: FAIL")
             return 1
+        document = build_result_document(node, metrics, "PASS", [])
+        emit_result(node, document)
         print("MILESTONE 2 CHARACTERIZATION: PASS")
         return 0
     except Exception as exception:
-        node.get_logger().error(str(exception))
+        failure = str(exception)
+        node.get_logger().error(failure)
+        document = build_result_document(
+            node, metrics, "INVALID", [failure], "infrastructure"
+        )
+        emit_result(node, document)
         print("MILESTONE 2 CHARACTERIZATION: FAIL")
         return 1
     finally:
