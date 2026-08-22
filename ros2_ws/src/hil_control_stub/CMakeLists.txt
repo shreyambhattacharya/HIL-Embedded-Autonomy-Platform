@@ -22,7 +22,7 @@ target_include_directories(
 )
 
 add_executable(software_mcu_stub src/software_mcu_stub.cpp)
-target_link_libraries(software_mcu_stub PRIVATE hil_control_math)
+target_link_libraries(software_mcu_stub hil_control_math)
 target_include_directories(software_mcu_stub PRIVATE include)
 ament_target_dependencies(software_mcu_stub geometry_msgs rclcpp sensor_msgs std_msgs)
 
@@ -34,7 +34,7 @@ install(
   TARGETS hil_control_math software_mcu_stub motion_test_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/ DESTINATION include)

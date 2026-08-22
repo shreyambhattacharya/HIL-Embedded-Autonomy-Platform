@@ -11,6 +11,7 @@ install(
 install(
   PROGRAMS scripts/milestone_01_smoke_test.py
   DESTINATION lib/${PROJECT_NAME}
+  RENAME milestone_01_smoke_test
 )
 
 ament_package()

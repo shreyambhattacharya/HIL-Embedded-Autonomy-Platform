@@ -85,6 +85,7 @@ world
   +-- base_link
         +-- left_wheel
         +-- right_wheel
+        +-- caster_link
         +-- imu_link
         +-- lidar_link
 ```
@@ -110,6 +111,7 @@ The Gazebo-side command topics are `/model/hil_rover/joint/left_wheel_joint/cmd_
 The baseline world uses a provisional fixed `0.001 s` physics step and a target real-time factor of `1.0`. The controller target update is `100 Hz`; IMU is `100 Hz`; LiDAR is `10 Hz`; ground-truth odometry is `50 Hz`. These are configuration targets, not measured timing results. They must be characterized later on the target machine and under HIL conditions.
 
 The physics engine is selected by Gazebo's default Harmonic physics configuration (`type="ignored"` in the SDF) while the fixed step, gravity, contact stiffness/damping, wheel radius, wheel separation, mass, and friction are explicit. The project does not claim bit-for-bit determinism.
+The chassis is supported longitudinally by low-friction spherical contacts at x = +/-0.30 m, with the driven wheel contacts at x = 0. All contacts touch the z = 0 plane in the nominal pose. This puts the center-of-mass projection inside the support polygon without adding another driven or controlled joint.
 
 ## Official integration references
 

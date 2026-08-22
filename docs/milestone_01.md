@@ -6,7 +6,7 @@ Create a repeatable software-only plant and control boundary that can later be c
 
 ## Design decisions
 
-1. The rover is a small differential-drive model made only from SDF primitive boxes, cylinders, and a sphere caster. It has enough mass, inertia, collision, friction, and contact configuration for a meaningful first control experiment.
+1. The rover is a small differential-drive model made only from SDF primitive boxes, cylinders, and low-friction spherical supports. A front support at x = +0.30 m, rear caster at x = -0.30 m, and the drive wheels at x = 0 surround the center-of-mass projection and prevent longitudinal pitch instability while preserving differential steering.
 2. Each drive wheel is a revolute joint with a Gazebo Harmonic `ApplyJointForce` system. The controller publishes independent `std_msgs/msg/Float64` effort values that `ros_gz_bridge` maps to Gazebo `gz.msgs.Double` joint-force topics.
 3. The rover does not load Gazebo's `DiffDrive` system. Differential-drive kinematics and wheel-speed feedback control remain visible in `software_mcu_stub`.
 4. `software_mcu_stub` is temporary ROS 2 infrastructure. It has no UART, FreeRTOS, watchdog, protocol, or simulated STM32 implementation.
@@ -84,24 +84,23 @@ source <repository>/ros2_ws/install/setup.bash
 ros2 run hil_simulation milestone_01_smoke_test
 ```
 
-The smoke test watches the required topics, rejects non-finite values, checks for a non-zero actuator effort, checks for observable ground-truth motion, and checks that effort returns to zero. If Gazebo or ROS 2 is unavailable, the procedure is **NOT RUN**, not a claimed pass.
+The smoke test watches the required topics, rejects invalid numeric values, accepts the standard LaserScan +Inf no-return sentinel, checks for a non-zero actuator effort, checks for observable ground-truth motion, and checks that effort returns to zero. If Gazebo or ROS 2 is unavailable, the procedure is **NOT RUN**, not a claimed pass.
 
 ## Acceptance criteria
 
-- [ ] `colcon build` completes on Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic.
-- [ ] Gazebo loads `baseline` and the `hil_rover` model.
-- [ ] The bridge creates all configured mappings without warnings about unsupported types.
-- [ ] Wheel feedback, IMU, LiDAR, and ground-truth odometry are visible on their ROS topics.
-- [ ] `software_mcu_stub` publishes independent left/right effort values.
-- [ ] The rover moves during the commanded phases and stops after the profile.
-- [ ] Unit tests pass.
-- [ ] The smoke test passes when run against the local stack.
+- [x] `colcon build` completes on Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic.
+- [x] Gazebo loads `baseline` and the `hil_rover` model.
+- [x] The bridge creates all configured mappings without warnings about unsupported types.
+- [x] Wheel feedback, IMU, LiDAR, and ground-truth odometry are visible on their ROS topics.
+- [x] `software_mcu_stub` publishes independent left/right effort values.
+- [x] The rover moves during the commanded phases and stops after the profile.
+- [x] Unit tests pass.
+- [x] The smoke test passes when run against the local stack.
 
-The current development host is Windows without ROS 2, Gazebo, colcon, or CMake, so these runtime criteria remain to be verified on the target Linux environment.
+The Milestone 1 runtime criteria were verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic; this remains software-only validation.
 
 ## Known limitations
 
-- No runtime verification was possible on this host.
 - The selected gains, effort limit, friction, and timing rates are initial engineering parameters, not calibrated values.
 - The smoke test relies on being started while the finite motion profile is still running.
 - The Gazebo GUI and GPU LiDAR require a functioning Linux graphics/rendering setup; use the documented headless mode for server-only checks.

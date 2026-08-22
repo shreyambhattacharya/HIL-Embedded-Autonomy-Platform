@@ -99,7 +99,7 @@ source ros2_ws/install/setup.bash
 ros2 run hil_simulation milestone_01_smoke_test
 ```
 
-The smoke test checks for wheel feedback, IMU, LiDAR, ground-truth odometry, actuator effort messages, finite numeric values, observable motion, and a return to zero actuator effort after the motion profile. It is an integration check against a running local simulation; it is not an HIL test.
+The smoke test checks for wheel feedback, IMU, LiDAR (including valid +Inf no-return ranges), ground-truth odometry, actuator effort messages, valid numeric values, observable motion, and a return to zero actuator effort after the motion profile. It is an integration check against a running local simulation; it is not an HIL test.
 
 Useful inspection commands while the stack is running:
 
@@ -114,6 +114,6 @@ ros2 topic echo /hil/actuator/left_effort
 
 ## Engineering status
 
-This repository was initially empty. The source and configuration files target Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, but the current Windows development host does not provide ROS 2, Gazebo, colcon, or CMake. Therefore, compilation and Gazebo execution must be verified on the target Linux environment; no hardware or benchmark result is implied by this source tree.
+The Milestone 1 build, unit tests, Gazebo GUI/headless launch, ROS/Gazebo bridges, deterministic motion profile, stopped state, and running-stack smoke test have been verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic. This is software-only validation; no hardware or benchmark result is implied.
 
 See [docs/architecture.md](docs/architecture.md) and [docs/milestone_01.md](docs/milestone_01.md) for the runtime boundary, parameters, interfaces, acceptance criteria, and limitations.

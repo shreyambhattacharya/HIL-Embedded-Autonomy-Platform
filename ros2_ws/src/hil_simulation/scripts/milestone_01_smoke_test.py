@@ -73,7 +73,28 @@ class Milestone01SmokeTest(Node):
 
     def _scan_cb(self, message: LaserScan) -> None:
         self.received.add("scan")
-        if not self._finite(message.ranges):
+        metadata = [
+            message.angle_min,
+            message.angle_max,
+            message.angle_increment,
+            message.time_increment,
+            message.scan_time,
+            message.range_min,
+            message.range_max,
+        ]
+        invalid_metadata = (
+            not self._finite(metadata)
+            or message.angle_increment <= 0.0
+            or message.range_min < 0.0
+            or message.range_max <= message.range_min
+        )
+        # LaserScan uses +Inf for a valid no-return ray. NaN and -Inf still
+        # indicate invalid sensor output.
+        invalid_range = any(
+            math.isnan(float(value)) or float(value) == -math.inf
+            for value in message.ranges
+        )
+        if invalid_metadata or invalid_range:
             self.nonfinite = True
 
     def _odom_cb(self, message: Odometry) -> None:
