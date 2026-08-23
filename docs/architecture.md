@@ -86,6 +86,27 @@ The characterization node observes the boundary; it does not sit in the command 
 
 A pre-measurement ROS graph query warms Fast DDS endpoint discovery in this WSL environment before readiness is evaluated. This is discovery stabilization, not part of the measured control path. External-force disturbance injection, communication faults, and a transport adapter remain future work.
 
+## Current — Milestone 3 distributed Linux integration
+
+Milestone 3 introduces the first intended physical embedded-Linux participant while keeping the plant and temporary low-level controller on the laptop. The laptop launch deliberately omits the local deterministic command source; the Pi launch runs that existing source with wall time and adds a small integration witness.
+
+```text
+Laptop / WSL Ubuntu 24.04
+  Gazebo + ros_gz_bridge + software_mcu_stub
+       ^ /hil/sensors/* and /hil/ground_truth/odom
+       |
+       | ROS 2 / DDS over Ethernet
+       |
+       v /hil/control/target_twist and /hil/pi/status
+Raspberry Pi 5 / Ubuntu Server 24.04 ARM64
+  motion_test_node, use_sim_time=false
+  pi_status_node + /hil/pi/ping
+```
+
+`milestone_03_laptop.launch.py` includes the existing Milestone 1 stack with `run_motion_source=false`. The default `milestone_01.launch.py` behavior remains unchanged because `run_motion_source` defaults to `true`. `hil_pi_runtime` depends on the already validated `hil_control_stub` source but does not depend on the simulator package, so a Pi build can stop at `hil_pi_runtime` without installing Gazebo.
+
+No Pi was reachable or configured during the software-preparation run. This section describes the intended runtime and its evidence procedure; it does not claim cross-host discovery or hardware execution.
+
 ## Package ownership
 
 | Package | Responsibility |
@@ -151,3 +172,14 @@ The chassis is supported longitudinally by low-friction spherical contacts at x 
 - [Gazebo ApplyJointForce API](https://gazebosim.org/api/sim/8/jointforcecmdcomponent.html)
 - [Gazebo OdometryPublisher API](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html)
 - [ros_gz_bridge Jazzy documentation](https://docs.ros.org/en/ros2_packages/jazzy/api/ros_gz_bridge/index.html)
+| `hil_pi_runtime` | Pi-side launch, deterministic source composition, status publisher, and diagnostic ping service; no Gazebo ownership. |
+
+Milestone 3 integration interfaces:
+
+| Interface | ROS type | Meaning |
+| --- | --- | --- |
+| `/hil/pi/status` | `std_msgs/msg/String` | Pi hostname, local monotonic uptime, and process startup identity for integration evidence. |
+| `/hil/pi/ping` | `std_srvs/srv/Trigger` | Diagnostic service used for caller-local ROS RTT measurement. |
+
+
+The Pi status and RTT interfaces are diagnostics, not authenticated device identity, health authority, or control transport. Endpoint-local monotonic clocks remain the only valid basis for future safety freshness decisions.

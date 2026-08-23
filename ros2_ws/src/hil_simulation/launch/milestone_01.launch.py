@@ -11,6 +11,7 @@ from launch.actions import (
     OpaqueFunction,
     SetEnvironmentVariable,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -121,6 +122,7 @@ def _launch_setup(context, *args, **kwargs):
             {"use_sim_time": True},
             {"autostart": LaunchConfiguration("motion_autostart")},
         ],
+        condition=IfCondition(LaunchConfiguration("run_motion_source")),
         output="screen",
     )
 
@@ -145,6 +147,11 @@ def generate_launch_description():
                 "motion_autostart",
                 default_value="true",
                 description="Start the deterministic motion profile automatically.",
+            ),
+            DeclareLaunchArgument(
+                "run_motion_source",
+                default_value="true",
+                description="Launch the deterministic target-twist source locally.",
             ),
             DeclareLaunchArgument(
                 "controller_diagnostics",
