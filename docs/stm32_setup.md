@@ -2,7 +2,7 @@
 
 ## Target identity
 
-This Milestone 4A target is the user-confirmed `NUCLEO-F446RE NUF446RE$KU1`, with STM32F446RETx, Cortex-M4F, and ST-LINK/V2-1. Do not reuse this firmware Makefile for another Nucleo without changing and re-verifying the target, memory map, clock, UART pins, and flashing configuration.
+This Milestone 4B target is the user-confirmed `NUCLEO-F446RE NUF446RE$KU1`, with STM32F446RETx, Cortex-M4F, and ST-LINK/V2-1. Do not reuse this firmware Makefile for another Nucleo without changing and re-verifying the target, memory map, clock, UART pins, and flashing configuration.
 
 The ST-LINK VCP was observed by Windows as COM6 and by WSL as `/dev/ttyACM0` after USB passthrough. The stable Linux path is:
 
@@ -86,20 +86,28 @@ The Linux bridge parameters are configurable:
 
 ```text
 serial_device
-baud_rate: 115200, 230400, or 460800
+baud_rate: 115200, 230400, 460800, or 921600
 command_tx_rate_hz: 100
 feedback_tx_rate_hz: 100
 heartbeat_rate_hz: 10
 status_timeout_ms: 250
 ```
 
-115200 is the initial bring-up setting, not the final selected baud. The earlier 460800 value is an analytical candidate from Milestone 2; select it only after physical error/RTT evidence.
+Milestone 4B hardware evidence selects 115200 as the usable baud for this implementation. At the nominal 20 ms characterization stream period it completed ARM/DISARM and timing telemetry with no CRC failures or UART overruns, but recorded a small number of decoder/length/gap counters. A 460800 A/B image produced sustained RX overruns and incomplete handshakes, so it is rejected. The 921600 option is build-configurable but was not selected or claimed as validated.
 
 ## Incremental bring-up
 
 Use these stages and retain actual output:
 
 1. Confirm `/dev/ttyACM0` or the by-id path.
+For reproducible baud variants:
+
+```bash
+make -C firmware/stm32 clean all BAUD=115200
+make -C firmware/stm32 clean all BAUD=460800
+make -C firmware/stm32 clean all BAUD=921600
+```
+The watchdog-reset image is built separately with `TEST_WATCHDOG=1`; never flash that test image for normal operation.
 2. Build and flash the verified F446RE image.
 3. Confirm repeated HELLO frames on the Linux bridge.
 4. Send PING and observe PONG/RTT.

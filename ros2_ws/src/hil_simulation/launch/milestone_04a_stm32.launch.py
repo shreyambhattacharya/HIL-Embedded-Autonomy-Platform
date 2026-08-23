@@ -60,7 +60,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument("headless", default_value="false"),
         DeclareLaunchArgument("motion_autostart", default_value="false"),
-        DeclareLaunchArgument("serial_device", default_value="/dev/ttyACM0"),
+        DeclareLaunchArgument("serial_device", default_value="/dev/serial/by-id"),
         DeclareLaunchArgument("baud_rate", default_value="115200"),
         OpaqueFunction(function=_launch_setup),
     ])

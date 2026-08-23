@@ -53,6 +53,13 @@ typedef struct {
   __IO uint32_t DCKCFGR2;
 } RCC_TypeDef;
 
+
+typedef struct {
+  __IO uint32_t KR;
+  __IO uint32_t PR;
+  __IO uint32_t RLR;
+  __IO uint32_t SR;
+} IWDG_TypeDef;
 typedef struct {
   __IO uint32_t SR;
   __IO uint32_t DR;
@@ -63,6 +70,7 @@ typedef struct {
   __IO uint32_t GTPR;
 } USART_TypeDef;
 
+#define IWDG ((IWDG_TypeDef *)0x40003000UL)
 #define GPIOA ((GPIO_TypeDef *)0x40020000UL)
 #define RCC ((RCC_TypeDef *)0x40023800UL)
 #define USART2 ((USART_TypeDef *)0x40004400UL)
@@ -71,6 +79,11 @@ typedef struct {
 #define NVIC_IPR ((volatile uint8_t *)0xE000E400UL)
 
 #define RCC_AHB1ENR_GPIOAEN (1UL << 0U)
+#define RCC_CSR_LPWRRSTF (1UL << 31U)
+#define RCC_CSR_WWDGRSTF (1UL << 30U)
+#define RCC_CSR_IWDGRSTF (1UL << 29U)
+#define RCC_CSR_SFTRSTF (1UL << 28U)
+#define RCC_CSR_RMVF (1UL << 24U)
 #define RCC_APB1ENR_USART2EN (1UL << 17U)
 #define USART_SR_ORE (1UL << 3U)
 #define USART_SR_RXNE (1UL << 5U)
@@ -81,3 +94,5 @@ typedef struct {
 #define USART_CR1_UE (1UL << 13U)
 
 #endif
+#define RCC_CSR_PORRSTF (1UL << 27U)
+#define RCC_CSR_BORRSTF (1UL << 26U)

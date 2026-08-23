@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <dirent.h>
 #include <cstring>
 #include <cerrno>
 #include <cstdio>
@@ -14,6 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -45,6 +47,12 @@ void write_u32(uint8_t *out, uint32_t value)
   out[3] = static_cast<uint8_t>((value >> 24U) & 0xffU);
 }
 
+uint16_t read_u16(const uint8_t *in)
+{
+  return static_cast<uint16_t>(in[0]) |
+    static_cast<uint16_t>(static_cast<uint16_t>(in[1]) << 8U);
+}
+
 uint32_t read_u32(const uint8_t *in)
 {
   return static_cast<uint32_t>(in[0]) |
@@ -59,7 +67,10 @@ speed_t baud_constant(int baud)
     case 115200: return B115200;
     case 230400: return B230400;
     case 460800: return B460800;
-    default: throw std::invalid_argument("unsupported baud_rate; use 115200, 230400, or 460800");
+#ifdef B921600
+    case 921600: return B921600;
+#endif
+    default: throw std::invalid_argument("unsupported baud_rate; use 115200, 230400, 460800, or 921600");
   }
 }
 
@@ -69,7 +80,7 @@ public:
   HilSerialBridge()
   : Node("hil_serial_bridge")
   {
-    serial_device_ = declare_parameter("serial_device", std::string("/dev/ttyACM0"));
+    serial_device_ = declare_parameter("serial_device", std::string("/dev/serial/by-id"));
     baud_rate_ = static_cast<int>(declare_parameter<int64_t>("baud_rate", 115200));
     command_tx_rate_hz_ = declare_parameter("command_tx_rate_hz", 100.0);
     feedback_tx_rate_hz_ = declare_parameter("feedback_tx_rate_hz", 100.0);
@@ -197,29 +208,81 @@ private:
     return tcsetattr(fd, TCSANOW, &settings) == 0;
   }
 
+  std::string resolve_serial_device() const
+  {
+    struct stat info{};
+    if (stat(serial_device_.c_str(), &info) != 0 || !S_ISDIR(info.st_mode)) {
+      return serial_device_;
+    }
+    DIR *directory = opendir(serial_device_.c_str());
+    if (directory == nullptr) {
+      return {};
+    }
+    std::string fallback;
+    std::string stable;
+    while (dirent *entry = readdir(directory)) {
+      const std::string name(entry->d_name);
+      if (name == "." || name == "..") {
+        continue;
+      }
+      const std::string path = serial_device_ + "/" + name;
+      if (name.find("STMicroelectronics_STM32_STLink") != std::string::npos) {
+        stable = path;
+      } else if (fallback.empty() && name.find("ttyACM") != std::string::npos) {
+        fallback = path;
+      }
+    }
+    closedir(directory);
+    return stable.empty() ? fallback : stable;
+  }
+
+  void publish_link_down(const char *reason)
+  {
+    if (!link_down_) {
+      publish_status(std::string("link=DOWN;reason=") + reason);
+    }
+    link_down_ = true;
+  }
+
   void try_open()
   {
     if (serial_fd_ >= 0) {
       return;
     }
-    const int fd = open(serial_device_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
-    if (fd < 0 || !configure_serial(fd)) {
-      if (fd >= 0) {
-        close(fd);
-      }
+    const std::string device = resolve_serial_device();
+    if (device.empty()) {
+      publish_link_down("device_unavailable");
       RCLCPP_WARN_THROTTLE(
-        get_logger(), *get_clock(), 5000, "serial device unavailable: %s", serial_device_.c_str());
+        get_logger(), *get_clock(), 5000, "serial device unavailable under %s", serial_device_.c_str());
+      return;
+    }
+    const int fd = open(device.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0) {
+      publish_link_down("open");
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 5000, "serial device unavailable: %s", device.c_str());
+      return;
+    }
+    if (!configure_serial(fd)) {
+      close(fd);
+      publish_link_down("configure");
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 5000, "serial device configuration failed: %s", device.c_str());
       return;
     }
     tcflush(fd, TCIOFLUSH);
     serial_fd_ = fd;
+    armed_ = false;
+    have_boot_id_ = false;
     hil_protocol_decoder_init(&decoder_);
     last_rx_time_ = Clock::now();
-    publish_status("link=UP;state=WAIT_LINK;boot_id=unknown");
-    send_hello();
-    RCLCPP_INFO(get_logger(), "opened STM32 serial device %s", serial_device_.c_str());
-  }
+    link_down_ = false;
+    publish_zero_effort();
+    publish_status("link=UP;state=WAIT_LINK;device=" + device + ";boot_id=unknown");
 
+    send_hello();
+    RCLCPP_INFO(get_logger(), "opened STM32 serial device %s", device.c_str());
+  }
   void close_serial()
   {
     if (serial_fd_ >= 0) {
@@ -232,8 +295,9 @@ private:
   {
     close_serial();
     armed_ = false;
+    have_boot_id_ = false;
     publish_zero_effort();
-    publish_status(std::string("link=DOWN;reason=") + reason);
+    publish_link_down(reason);
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "STM32 serial link failure: %s", reason);
   }
 
@@ -341,6 +405,7 @@ private:
         continue;
       }
       if (count == 0) {
+        link_failure("hangup");
         return;
       } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
         link_failure("read");
@@ -349,17 +414,29 @@ private:
     }
   }
 
+  void observe_boot_id(uint32_t boot_id)
+  {
+    if (have_boot_id_ && boot_id != boot_id_) {
+      armed_ = false;
+      publish_zero_effort();
+    }
+    boot_id_ = boot_id;
+    have_boot_id_ = true;
+  }
+
   void handle_frame(const hil_protocol_frame_t &frame)
   {
     last_rx_time_ = Clock::now();
-    if (frame.message_type == HIL_MSG_HELLO && frame.payload_length >= 10U) {
-      const uint32_t boot_id = read_u32(&frame.payload[2]);
-      if (have_boot_id_ && boot_id != boot_id_) {
-        armed_ = false;
-        publish_zero_effort();
+    if (frame.message_type == HIL_MSG_HELLO) {
+      if (frame.payload_length < 10U || frame.payload[0] != HIL_ROLE_STM32 ||
+        frame.payload[1] != HIL_PROTOCOL_VERSION) {
+        publish_status("link=UP;state=SAFE;safety_reason=protocol_incompatible");
+        return;
       }
-      boot_id_ = boot_id;
-      have_boot_id_ = true;
+      const uint32_t boot_id = read_u32(&frame.payload[2]);
+      observe_boot_id(boot_id);
+      armed_ = false;
+      publish_zero_effort();
       publish_status("link=UP;state=WAIT_LINK;hello=STM32_F446RE;boot_id=" + std::to_string(boot_id));
       return;
     }
@@ -372,24 +449,70 @@ private:
       }
       return;
     }
-    if (frame.message_type == HIL_MSG_STATUS) {
-      if (frame.payload_length >= 10U) {
+    if (frame.message_type == HIL_MSG_TIMING_STATUS &&
+      frame.payload_length >= HIL_TIMING_STATUS_PAYLOAD_SIZE) {
+      const auto state = frame.payload[0];
+      const auto safety_reason = frame.payload[1];
+      const auto reset_cause = frame.payload[2];
+      const uint32_t boot_id = read_u32(&frame.payload[4]);
+      observe_boot_id(boot_id);
+      armed_ = state == HIL_STATE_ACTIVE;
+      std::ostringstream status;
+      status << "link=UP;timing=1;state=" << static_cast<int>(state)
+        << ";safety_reason=" << static_cast<int>(safety_reason)
+        << ";reset_cause=" << static_cast<int>(reset_cause)
+        << ";boot_id=" << boot_id
+        << ";sample_count=" << read_u32(&frame.payload[12])
+        << ";exec_min_us=" << read_u32(&frame.payload[16])
+        << ";exec_mean_us=" << read_u32(&frame.payload[20])
+        << ";exec_max_us=" << read_u32(&frame.payload[24])
+        << ";period_min_us=" << read_u32(&frame.payload[28])
+        << ";period_mean_us=" << read_u32(&frame.payload[32])
+        << ";period_max_us=" << read_u32(&frame.payload[36])
+        << ";deadline_misses=" << read_u32(&frame.payload[40])
+        << ";rx_stream_drops=" << read_u32(&frame.payload[44])
+        << ";tx_queue_drops=" << read_u32(&frame.payload[48])
+        << ";uart_overruns=" << read_u32(&frame.payload[52])
+        << ";rx_stack_hwm=" << read_u16(&frame.payload[56])
+        << ";control_stack_hwm=" << read_u16(&frame.payload[58])
+        << ";tx_stack_hwm=" << read_u16(&frame.payload[60]);
+      publish_status(status.str());
+      if (frame.payload_length >= HIL_STATUS_PAYLOAD_SIZE) {
+        const auto state = frame.payload[0];
+        const auto safety_reason = frame.payload[1];
+        const auto reset_cause = frame.payload[2];
+        const uint32_t boot_id = read_u32(&frame.payload[4]);
+        observe_boot_id(boot_id);
+        armed_ = state == HIL_STATE_ACTIVE;
+        std::ostringstream status;
+        status << "link=UP;state=" << static_cast<int>(state)
+          << ";safety_reason=" << static_cast<int>(safety_reason)
+          << ";reset_cause=" << static_cast<int>(reset_cause)
+          << ";boot_id=" << boot_id
+          << ";rx_valid=" << read_u32(&frame.payload[12])
+          << ";rx_crc=" << read_u32(&frame.payload[16])
+          << ";rx_decode=" << read_u32(&frame.payload[20])
+          << ";rx_len=" << read_u32(&frame.payload[24])
+          << ";rx_version=" << read_u32(&frame.payload[28])
+          << ";rx_dupe=" << read_u32(&frame.payload[32])
+          << ";rx_stale=" << read_u32(&frame.payload[36])
+          << ";rx_gaps=" << read_u32(&frame.payload[40])
+          << ";rx_stream_drops=" << read_u32(&frame.payload[44])
+          << ";tx_queue_drops=" << read_u32(&frame.payload[48])
+          << ";uart_overruns=" << read_u32(&frame.payload[52]);
+        publish_status(status.str());
+      } else if (frame.payload_length >= 26U) {
         const auto state = frame.payload[0];
         const auto fault = frame.payload[1];
         const uint32_t boot_id = read_u32(&frame.payload[2]);
-        if (have_boot_id_ && boot_id != boot_id_) {
-          armed_ = false;
-          publish_zero_effort();
-        }
-        boot_id_ = boot_id;
-        have_boot_id_ = true;
+        observe_boot_id(boot_id);
         armed_ = state == HIL_STATE_ACTIVE;
         std::ostringstream status;
         status << "link=UP;state=" << static_cast<int>(state)
           << ";fault=" << static_cast<int>(fault)
           << ";boot_id=" << boot_id
-          << ";rx_valid=" << decoder_.counters.valid_frames
-          << ";rx_crc=" << decoder_.counters.crc_failures;
+          << ";rx_valid=" << read_u32(&frame.payload[10])
+          << ";rx_crc=" << read_u32(&frame.payload[14]);
         publish_status(status.str());
       }
       return;
@@ -413,12 +536,9 @@ private:
 
   void safety_check()
   {
-    if (serial_fd_ < 0 ||
+    if (serial_fd_ >= 0 &&
       std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - last_rx_time_).count() > status_timeout_ms_) {
-      if (armed_ || serial_fd_ >= 0) {
-        armed_ = false;
-        publish_zero_effort();
-      }
+      link_failure("timeout");
     }
   }
 
@@ -446,9 +566,19 @@ private:
 
   void mode_request(uint8_t mode, const Trigger::Response::SharedPtr &response)
   {
-    if (mode == HIL_MODE_ARM && !have_feedback_) {
+    if (mode == HIL_MODE_ARM && serial_fd_ < 0) {
       response->success = false;
-      response->message = "wheel feedback has not arrived; refusing ARM";
+      response->message = "serial link unavailable; refusing ARM";
+      return;
+    }
+    if (mode == HIL_MODE_ARM && !have_boot_id_) {
+      response->success = false;
+      response->message = "STM32 HELLO has not arrived; refusing ARM";
+      return;
+    }
+    if (mode == HIL_MODE_ARM && (!have_feedback_ || !have_command_)) {
+      response->success = false;
+      response->message = "command and wheel feedback are required; refusing ARM";
       return;
     }
     hil_protocol_frame_t frame{};
@@ -466,6 +596,7 @@ private:
   }
 
   int serial_fd_{-1};
+  bool link_down_{false};
   std::string serial_device_;
   int baud_rate_{115200};
   double command_tx_rate_hz_{100.0};

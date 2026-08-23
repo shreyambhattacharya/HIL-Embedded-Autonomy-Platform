@@ -71,6 +71,41 @@ static void test_message_helpers(void)
   assert(command == HIL_MSG_MODE_COMMAND && transaction == 77U && result == HIL_ACK_OK);
 }
 
+static void test_timing_status(void)
+{
+  const hil_timing_status_t source = {
+    .state = HIL_STATE_ACTIVE,
+    .safety_reason = HIL_SAFETY_NONE,
+    .reset_cause = HIL_RESET_CAUSE_IWDG,
+    .boot_id = 0x11223344U,
+    .uptime_ms = 12345U,
+    .sample_count = 1000U,
+    .execution_min_us = 20U,
+    .execution_mean_us = 42U,
+    .execution_max_us = 88U,
+    .period_min_us = 9990U,
+    .period_mean_us = 10000U,
+    .period_max_us = 10080U,
+    .deadline_misses = 3U,
+    .rx_stream_drops = 4U,
+    .tx_queue_drops = 5U,
+    .uart_overruns = 6U,
+    .rx_stack_high_water_words = 70U,
+    .control_stack_high_water_words = 71U,
+    .tx_stack_high_water_words = 72U,
+  };
+  hil_protocol_frame_t frame;
+  assert(hil_protocol_pack_timing_status(&frame, &source));
+  assert(frame.payload_length == HIL_TIMING_STATUS_PAYLOAD_SIZE);
+  hil_timing_status_t decoded = {0};
+  assert(hil_protocol_unpack_timing_status(&frame, &decoded));
+  assert(decoded.state == source.state && decoded.reset_cause == source.reset_cause);
+  assert(decoded.boot_id == source.boot_id && decoded.uptime_ms == source.uptime_ms);
+  assert(decoded.execution_mean_us == source.execution_mean_us);
+  assert(decoded.period_max_us == source.period_max_us);
+  assert(decoded.deadline_misses == source.deadline_misses);
+  assert(decoded.tx_stack_high_water_words == source.tx_stack_high_water_words);
+}
 static void test_malformed_and_sequences(void)
 {
   hil_protocol_frame_t source;
@@ -140,6 +175,7 @@ int main(void)
   test_cobs();
   test_round_trip();
   test_message_helpers();
+  test_timing_status();
   test_malformed_and_sequences();
   test_random_bytes();
   puts("hil_protocol tests passed");

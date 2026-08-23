@@ -33,6 +33,16 @@ make -C firmware/stm32
 
 The build is command-line reproducible and uses the pinned FreeRTOS-Kernel V11.3.1 source in `third_party/FreeRTOS-Kernel`. No dynamic allocation is used by the application; all application tasks, queues/buffers, and protocol storage are static.
 
+Milestone 4B build variants:
+
+```bash
+make -C firmware/stm32 clean all BAUD=115200
+make -C firmware/stm32 clean all BAUD=460800
+make -C firmware/stm32 clean all BAUD=115200 TEST_WATCHDOG=1
+```
+
+The normal image enables the IWDG and refreshes it only while the supervisor observes control-task progress. `TEST_WATCHDOG=1` intentionally withholds refresh after the test hold interval so the next STATUS/TIMING_STATUS reports an IWDG reset cause. Use the host tools in `tools/stm32` to collect fixed-schema timing and health evidence.
+
 ## Flashing
 
 Do not flash until the exact target has been checked. With the board attached to WSL and OpenOCD available:

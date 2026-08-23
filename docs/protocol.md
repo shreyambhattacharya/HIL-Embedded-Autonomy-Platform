@@ -49,22 +49,41 @@ Integers are written explicitly in little-endian order. Float fields are explici
 | 8 | ACK | STM32 → Linux | command type, transaction ID, result byte |
 | 9 | PING | Linux → STM32 | `uint32` caller token |
 | 10 | PONG | STM32 → Linux | same token |
+| 11 | TIMING_STATUS | STM32 → Linux | timing, watchdog, safety, reset, stack, and health counters |
 
 Roles are `1 = Linux bridge` and `2 = STM32`. Modes are `1 = ARM` and `2 = DISARM`. ACK results are `0 = OK`, `1 = REJECTED`, and `2 = INVALID`. Controller states are `0 = WAIT_LINK`, `1 = DISARMED`, `2 = ACTIVE`, `3 = SAFE`, and `4 = FAULT`.
 
-The current STATUS payload is 26 bytes:
+The current STATUS payload is 56 bytes. `TIMING_STATUS` is message 11 with a fixed 62-byte payload.
 
 ```text
 u8 state
-u8 fault_reason
+u8 safety_reason
+u8 reset_cause
+u8 reserved
 u32 boot_id
 u32 uptime_ms
 u32 accepted_frames
 u32 crc_failures
 u32 decode_failures
+u32 length_failures
+u32 version_failures
+u32 duplicate_frames
+u32 stale_frames
 u32 sequence_gaps
+u32 rx_stream_drops
+u32 tx_queue_drops
+u32 uart_overruns
 ```
 
+`TIMING_STATUS` serializes state, safety reason, reset cause, boot ID, uptime, sample count, execution min/mean/max, control-period min/mean/max, deadline misses, RX stream drops, TX queue drops, UART overruns, and RX/control/TX stack high-water marks. All scalar fields are explicitly little-endian; the payload has no ABI-dependent struct padding.
+
+Safety reasons are `0 = NONE`, `1 = COMMAND_STALE`, `2 = FEEDBACK_STALE`, `3 = MANUAL_DISARM`, `4 = PROTOCOL_INCOMPATIBLE`, `5 = INTERNAL_ERROR`, and `6 = WATCHDOG_RESET`. Reset causes are `0 = UNKNOWN`, `1 = POWER_ON`, `2 = SOFTWARE`, and `3 = IWDG`.
+
+The STM32 advertises timing telemetry and watchdog supervision in HELLO capabilities. A valid Linux-bridge HELLO begins a session and forces fresh command and feedback samples before ARM can succeed.
+
+The 100 Hz controller uses DWT cycle-counter instrumentation for execution and activation-period statistics. The IWDG is configured from the approximate 32 kHz LSI; its nominal timeout is about 500 ms and must be treated as approximate because LSI tolerance is not calibrated.
+
+The host characterization tools under `tools/stm32` emit JSON evidence and require successful ARM and DISARM ACKs in addition to receiving timing telemetry. `run_hardware_validation.py` performs the baud A/B wrapper; the watchdog case intentionally remains a separate image/build gate.
 ## Sequence semantics
 
 Each endpoint has one independent transmit sequence counter. A receiver accepts the first sequence, accepts a forward modulo-`uint32` sequence, counts a forward delta greater than one as a gap, rejects equal sequence as duplicate, and rejects a modulo delta at or above `0x80000000` as stale. Streaming loss is counted but is not itself a latched fault; freshness supervision determines safe output.

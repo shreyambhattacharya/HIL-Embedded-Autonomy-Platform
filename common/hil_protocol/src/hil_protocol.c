@@ -380,3 +380,65 @@ bool hil_protocol_unpack_ping(const hil_protocol_frame_t *frame, uint32_t *token
   *token = read_u32(frame->payload);
   return true;
 }
+bool hil_protocol_pack_timing_status(
+  hil_protocol_frame_t *frame, const hil_timing_status_t *status)
+{
+  if (frame == NULL || status == NULL) {
+    return false;
+  }
+  memset(frame, 0, sizeof(*frame));
+  frame->protocol_version = HIL_PROTOCOL_VERSION;
+  frame->message_type = HIL_MSG_TIMING_STATUS;
+  frame->payload_length = HIL_TIMING_STATUS_PAYLOAD_SIZE;
+  frame->payload[0] = status->state;
+  frame->payload[1] = status->safety_reason;
+  frame->payload[2] = status->reset_cause;
+  frame->payload[3] = status->reserved;
+  write_u32(&frame->payload[4], status->boot_id);
+  write_u32(&frame->payload[8], status->uptime_ms);
+  write_u32(&frame->payload[12], status->sample_count);
+  write_u32(&frame->payload[16], status->execution_min_us);
+  write_u32(&frame->payload[20], status->execution_mean_us);
+  write_u32(&frame->payload[24], status->execution_max_us);
+  write_u32(&frame->payload[28], status->period_min_us);
+  write_u32(&frame->payload[32], status->period_mean_us);
+  write_u32(&frame->payload[36], status->period_max_us);
+  write_u32(&frame->payload[40], status->deadline_misses);
+  write_u32(&frame->payload[44], status->rx_stream_drops);
+  write_u32(&frame->payload[48], status->tx_queue_drops);
+  write_u32(&frame->payload[52], status->uart_overruns);
+  write_u16(&frame->payload[56], status->rx_stack_high_water_words);
+  write_u16(&frame->payload[58], status->control_stack_high_water_words);
+  write_u16(&frame->payload[60], status->tx_stack_high_water_words);
+  return true;
+}
+
+bool hil_protocol_unpack_timing_status(
+  const hil_protocol_frame_t *frame, hil_timing_status_t *status)
+{
+  if (frame == NULL || status == NULL || frame->message_type != HIL_MSG_TIMING_STATUS ||
+    frame->payload_length != HIL_TIMING_STATUS_PAYLOAD_SIZE) {
+    return false;
+  }
+  status->state = frame->payload[0];
+  status->safety_reason = frame->payload[1];
+  status->reset_cause = frame->payload[2];
+  status->reserved = frame->payload[3];
+  status->boot_id = read_u32(&frame->payload[4]);
+  status->uptime_ms = read_u32(&frame->payload[8]);
+  status->sample_count = read_u32(&frame->payload[12]);
+  status->execution_min_us = read_u32(&frame->payload[16]);
+  status->execution_mean_us = read_u32(&frame->payload[20]);
+  status->execution_max_us = read_u32(&frame->payload[24]);
+  status->period_min_us = read_u32(&frame->payload[28]);
+  status->period_mean_us = read_u32(&frame->payload[32]);
+  status->period_max_us = read_u32(&frame->payload[36]);
+  status->deadline_misses = read_u32(&frame->payload[40]);
+  status->rx_stream_drops = read_u32(&frame->payload[44]);
+  status->tx_queue_drops = read_u32(&frame->payload[48]);
+  status->uart_overruns = read_u32(&frame->payload[52]);
+  status->rx_stack_high_water_words = read_u16(&frame->payload[56]);
+  status->control_stack_high_water_words = read_u16(&frame->payload[58]);
+  status->tx_stack_high_water_words = read_u16(&frame->payload[60]);
+  return true;
+}

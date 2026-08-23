@@ -37,7 +37,8 @@ typedef enum {
   HIL_MSG_MODE_COMMAND = 7,
   HIL_MSG_ACK = 8,
   HIL_MSG_PING = 9,
-  HIL_MSG_PONG = 10
+  HIL_MSG_PONG = 10,
+  HIL_MSG_TIMING_STATUS = 11
 } hil_message_type_t;
 
 typedef enum {
@@ -63,6 +64,25 @@ typedef enum {
   HIL_STATE_SAFE = 3,
   HIL_STATE_FAULT = 4
 } hil_controller_state_t;
+typedef enum {
+  HIL_SAFETY_NONE = 0,
+  HIL_SAFETY_COMMAND_STALE = 1,
+  HIL_SAFETY_FEEDBACK_STALE = 2,
+  HIL_SAFETY_MANUAL_DISARM = 3,
+  HIL_SAFETY_PROTOCOL_INCOMPATIBLE = 4,
+  HIL_SAFETY_INTERNAL_ERROR = 5,
+  HIL_SAFETY_WATCHDOG_RESET = 6
+} hil_safety_reason_t;
+typedef enum {
+  HIL_RESET_CAUSE_UNKNOWN = 0,
+  HIL_RESET_CAUSE_POWER_ON = 1,
+  HIL_RESET_CAUSE_SOFTWARE = 2,
+  HIL_RESET_CAUSE_IWDG = 3
+} hil_reset_cause_t;
+#define HIL_STATUS_PAYLOAD_SIZE 56U
+#define HIL_TIMING_STATUS_PAYLOAD_SIZE 62U
+#define HIL_HELLO_CAP_TIMING_STATUS (1U << 0U)
+#define HIL_HELLO_CAP_HARDWARE_WATCHDOG (1U << 1U)
 
 typedef struct {
   uint8_t protocol_version;
@@ -93,6 +113,28 @@ typedef struct {
   hil_protocol_counters_t counters;
 } hil_protocol_decoder_t;
 
+typedef struct {
+  uint8_t state;
+  uint8_t safety_reason;
+  uint8_t reset_cause;
+  uint8_t reserved;
+  uint32_t boot_id;
+  uint32_t uptime_ms;
+  uint32_t sample_count;
+  uint32_t execution_min_us;
+  uint32_t execution_mean_us;
+  uint32_t execution_max_us;
+  uint32_t period_min_us;
+  uint32_t period_mean_us;
+  uint32_t period_max_us;
+  uint32_t deadline_misses;
+  uint32_t rx_stream_drops;
+  uint32_t tx_queue_drops;
+  uint32_t uart_overruns;
+  uint16_t rx_stack_high_water_words;
+  uint16_t control_stack_high_water_words;
+  uint16_t tx_stack_high_water_words;
+} hil_timing_status_t;
 typedef enum {
   HIL_PROTOCOL_NO_FRAME = 0,
   HIL_PROTOCOL_FRAME_READY = 1,
@@ -137,6 +179,10 @@ bool hil_protocol_pack_ack(
   hil_protocol_frame_t *frame, uint8_t command_type, uint32_t transaction, uint8_t result);
 bool hil_protocol_unpack_ack(
   const hil_protocol_frame_t *frame, uint8_t *command_type, uint32_t *transaction, uint8_t *result);
+bool hil_protocol_pack_timing_status(
+  hil_protocol_frame_t *frame, const hil_timing_status_t *status);
+bool hil_protocol_unpack_timing_status(
+  const hil_protocol_frame_t *frame, hil_timing_status_t *status);
 bool hil_protocol_pack_ping(hil_protocol_frame_t *frame, uint32_t token);
 bool hil_protocol_unpack_ping(const hil_protocol_frame_t *frame, uint32_t *token);
 
