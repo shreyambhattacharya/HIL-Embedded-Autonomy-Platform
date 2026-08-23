@@ -107,6 +107,20 @@ Raspberry Pi 5 / Ubuntu Server 24.04 ARM64
 
 No Pi was reachable or configured during the software-preparation run. This section describes the intended runtime and its evidence procedure; it does not claim cross-host discovery or hardware execution.
 
+## Current — Milestone 4A STM32 UART integration
+
+Milestone 4A adds the first concrete Linux-to-controller transport and an STM32F446RE FreeRTOS application while preserving the Milestone 1 software controller as a separate simulation path.
+
+```text
+ROS 2/Gazebo -> hil_serial_bridge -> USB serial/ST-LINK VCP
+                                      -> NUCLEO-F446RE / STM32F446RE
+                                         FreeRTOS control + safety
+```
+
+The exact target is the user-confirmed NUCLEO-F446RE `NUF446RE$KU1`; firmware uses USART2 on PA2/PA3 through the board's ST-LINK VCP. `hil_serial_bridge` owns the POSIX serial device, COBS framing, CRC checking, sequence accounting, ROS-to-wire conversion, and zero-output simulation mirror when the device is absent or stale.
+
+The portable C protocol and control libraries are shared by the Linux bridge and STM32 firmware. The STM32 owns the real-time state machine, freshness watchdogs, wheel-effort computation, ACK handling, and safe zero outputs. Physical target validation is still pending ARM tooling, flashing, and retained board evidence.
+
 ## Package ownership
 
 | Package | Responsibility |
@@ -114,6 +128,8 @@ No Pi was reachable or configured during the software-preparation run. This sect
 | `hil_description` | Only the primitive-geometry rover model and its SDF assets. |
 | `hil_simulation` | Baseline world, bridge map, interactive/test launch files, smoke test, and timing characterization. |
 | `hil_control_stub` | Temporary software MCU controller, opt-in timing diagnostics, deterministic command source, parameters, and mathematical unit tests. |
+| `hil_pi_runtime` | Pi-side launch, deterministic source composition, status publisher, and diagnostic ping service; no Gazebo ownership. |
+| `hil_serial_bridge` | Linux POSIX serial endpoint, shared protocol, ROS control/sensor conversion, status, and ARM/DISARM/PING services. |
 
 ## Coordinate frames
 
@@ -156,6 +172,21 @@ Opt-in Milestone 2 diagnostics use `std_msgs/msg/Float64`:
 
 The Gazebo-side command topics are `/model/hil_rover/joint/left_wheel_joint/cmd_force` and the corresponding right-wheel topic. Those are implementation details of the bridge, not the controller API.
 
+Milestone 4A serial bridge interfaces:
+
+| ROS interface | ROS type | Direction | Meaning |
+| --- | --- | --- | --- |
+| `/hil/control/target_twist` | `geometry_msgs/msg/Twist` | ROS -> bridge | Body command converted to a `CONTROL_COMMAND` frame. |
+| `/hil/sensors/wheel_states` | `sensor_msgs/msg/JointState` | ROS -> bridge | Latest wheel feedback converted to a `WHEEL_FEEDBACK` frame. |
+| `/hil/actuator/left_effort` | `std_msgs/msg/Float64` | bridge -> ROS | Left effort received from STM32, or zero while the serial link is not valid. |
+| `/hil/actuator/right_effort` | `std_msgs/msg/Float64` | bridge -> ROS | Right effort received from STM32, or zero while the serial link is not valid. |
+| `/hil/stm32/status` | `std_msgs/msg/String` | bridge -> ROS | Link, state, boot identity, and protocol counter summary. |
+| `/hil/stm32/arm` | `std_srvs/srv/Trigger` | ROS -> bridge | Requests ARM after recent wheel feedback; sends a mode transaction. |
+| `/hil/stm32/disarm` | `std_srvs/srv/Trigger` | ROS -> bridge | Sends DISARM and causes zero output. |
+| `/hil/stm32/ping` | `std_srvs/srv/Trigger` | ROS -> bridge | Sends a tokenized PING and reports the matching PONG. |
+
+The concrete wire contract is documented in [`docs/protocol.md`](protocol.md). It uses COBS, CRC-16/CCITT-FALSE, explicit little-endian scalar encoding, a 64-byte payload limit, and a 96-byte encoded-frame limit. The earlier transport document retains historical planning assumptions rather than hardware evidence.
+
 ## Timing and physics
 
 The baseline world uses a provisional fixed `0.001 s` physics step and a target real-time factor of `1.0`. The controller target update is `100 Hz`; IMU is `100 Hz`; LiDAR is `10 Hz`; ground-truth odometry is `50 Hz`. These are configuration targets, not measured timing results. They must be characterized later on the target machine and under HIL conditions.
@@ -172,7 +203,6 @@ The chassis is supported longitudinally by low-friction spherical contacts at x 
 - [Gazebo ApplyJointForce API](https://gazebosim.org/api/sim/8/jointforcecmdcomponent.html)
 - [Gazebo OdometryPublisher API](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html)
 - [ros_gz_bridge Jazzy documentation](https://docs.ros.org/en/ros2_packages/jazzy/api/ros_gz_bridge/index.html)
-| `hil_pi_runtime` | Pi-side launch, deterministic source composition, status publisher, and diagnostic ping service; no Gazebo ownership. |
 
 Milestone 3 integration interfaces:
 

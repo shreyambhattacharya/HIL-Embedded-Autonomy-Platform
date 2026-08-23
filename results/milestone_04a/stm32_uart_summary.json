@@ -1,0 +1,80 @@
+{
+  "board": {
+    "model": "NUCLEO-F446RE NUF446RE$KU1",
+    "mcu": "STM32F446RETx",
+    "core": "Cortex-M4F",
+    "st_link": "STLINK V2J46M33",
+    "target_voltage_v_approx": 3.25
+  },
+  "repository": {
+    "branch": "milestone-04a-stm32-uart",
+    "starting_commit": "3a08e0bf9284e0ff23b062b4d9ff9ab9d205d6f5",
+    "working_tree": "uncommitted"
+  },
+  "firmware": {
+    "toolchain": "arm-none-eabi-gcc 13.2.1",
+    "size_bytes_dec": 24952,
+    "elf_sha256": "c1dc73f6057e55c3bb95e4941aae6cc44453c86462fbdedd7e4e0e992e097938",
+    "bin_sha256": "655971d50f867748b2bdf4e0308b3ac4a9daa2e352b6e9f742a7c1297c1db7a9",
+    "hex_sha256": "21474cb4754ddab239ad706c9e919fd92a45ffb3ae5a12bb407c0a1b5a79e255",
+    "flash": "PASS; OpenOCD device id 0x10006421; 512 KiB; verify OK"
+  },
+  "uart": {
+    "device": "/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575171525067054337-if02",
+    "baud": 115200,
+    "protocol_version": 1,
+    "framing": "COBS with 0x00 delimiter",
+    "crc": "CRC-16/CCITT-FALSE"
+  },
+  "rtt": {
+    "samples": 1000,
+    "timeouts": 0,
+    "median_ms": 6.765226,
+    "p95_ms": 12.720118,
+    "maximum_ms": 14.763847
+  },
+  "sustained_link": {
+    "duration_s": 59.99014249799984,
+    "target_rate_hz": 100,
+    "control_frames_sent": 6000,
+    "feedback_frames_sent": 6000,
+    "mcu_valid_frames": 12001,
+    "mcu_crc_failures": 0,
+    "mcu_decode_failures": 0,
+    "mcu_sequence_gaps": 0,
+    "mcu_uptime_ms": 62204,
+    "host_received_frames_by_type": {
+      "HEARTBEAT": 628,
+      "WHEEL_EFFORT": 6278,
+      "STATUS": 627
+    }
+  },
+  "hil_motion": {
+    "result": "PASS",
+    "first_forward_m": 0.5299776903,
+    "turn_yaw_rad": 0.1953791177,
+    "second_forward_m": 0.4241842390,
+    "max_abs_effort_nm": 1.3574191332,
+    "final_linear_speed_m_s": 0.0,
+    "final_yaw_rate_rad_s": 0.0
+  },
+  "fault_tests": {
+    "command_loss": "PASS; SAFE state 3; zero effort",
+    "feedback_loss": "PASS; SAFE state 3; zero effort",
+    "bad_crc": "PASS; CRC counter incremented 0 to 1; ACTIVE state retained",
+    "duplicate_sequence": "PASS; ignored; ACTIVE state and positive effort retained",
+    "stale_sequence": "PASS; ignored; ACTIVE state and positive effort retained",
+    "mcu_reset": "PASS; boot identity changed; HELLO/WAIT_LINK observed; non-active state restored"
+  },
+  "regression": {
+    "common_ctest": "PASS; 2 of 2",
+    "ros_serial_bridge_build": "PASS",
+    "milestone_1_smoke_profile_through_stm32": "PASS",
+    "python_tool_tests": "PASS; prior run 10 of 10"
+  },
+  "not_run": [
+    "target-local control execution-time distribution",
+    "physical USB disconnect while HIL is active",
+    "paired fresh-process software-stub versus STM32 trajectory comparison"
+  ]
+}

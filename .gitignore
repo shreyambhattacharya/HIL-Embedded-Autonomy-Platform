@@ -12,6 +12,14 @@ __pycache__/
 .vscode/
 .idea/
 
+# Generated STM32 firmware build outputs
+firmware/stm32/build/
+
 # OS files
 .DS_Store
 Thumbs.db
+# Compiler-generated objects and dependency files
+*.o
+*.d
+*.su
+*.lst

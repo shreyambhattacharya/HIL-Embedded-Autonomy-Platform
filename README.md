@@ -4,6 +4,8 @@ This repository is the starting point for a Hardware-in-the-Loop (HIL) embedded 
 
 The project is intentionally being built in milestones. **Milestone 1 — Deterministic Simulation Foundation** is validated, and **Milestone 2B — Repeatability Characterization and Transport Requirements** is complete on the local software-only host. It measures the existing boundary before introducing transport or fault infrastructure. It does not contain hardware or claim hardware validation.
 
+Milestone 4A now contains the portable Version 1 protocol, a POSIX ROS 2 serial bridge, and target-specific FreeRTOS firmware for the user-confirmed NUCLEO-F446RE. Host and ARM builds, USB debug passthrough, verified flashing, physical UART, sustained-link, safety-fault, and Gazebo HIL gates are validated; optional timing/disconnect/A-B measurements remain open.
+
 ## Implemented foundation
 
 Milestone 1 provides:
@@ -29,7 +31,14 @@ The first Milestone 2 slice adds:
 - 10-run normal and controlled-load baselines;
 - provisional Pi/STM32 transport requirements and analytical UART budgets.
 
-Not implemented yet: versioned Pi/STM32 transport, Raspberry Pi software, UART, STM32 firmware, FreeRTOS, binary protocols, watchdogs, physical disturbance or fault injection, cameras, ML, localization, planning, Nav2, and HIL hardware testing.
+Milestone 4A currently provides:
+
+- `common/`: shared C protocol and controller-core libraries with host tests;
+- `ros2_ws/src/hil_serial_bridge/`: POSIX serial bridge and ROS ARM/DISARM/PING services;
+- `firmware/stm32/`: STM32F446RE FreeRTOS application, startup, linker script, and Make build;
+- `docs/protocol.md`, `docs/stm32_setup.md`, and `docs/milestone_04a.md`: wire contract, board setup, and evidence status.
+
+Optional target timing, physical disconnect, and paired A/B evidence remain open. Cameras, ML, localization, planning, and Nav2 are also outside the current scope.
 
 ## Repository layout
 

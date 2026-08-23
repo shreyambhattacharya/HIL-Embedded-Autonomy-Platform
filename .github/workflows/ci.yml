@@ -22,7 +22,7 @@ jobs:
       - name: Build workspace and run package tests
         uses: ros-tooling/action-ros-ci@v0.4
         with:
-          package-name: hil_control_stub hil_description hil_simulation
+          package-name: hil_control_stub hil_description hil_pi_runtime hil_serial_bridge hil_simulation
           target-ros2-distro: jazzy
           colcon-defaults: |
             {
@@ -31,6 +31,12 @@ jobs:
                 "cmake-args": ["-DBUILD_TESTING=ON"]
               }
             }
+
+      - name: Build and test portable protocol/control libraries
+        run: |
+          cmake -S common -B common/build-host -DCMAKE_BUILD_TYPE=Debug
+          cmake --build common/build-host --parallel
+          ctest --test-dir common/build-host --output-on-failure
 
       - name: Run characterization tooling unit tests
         run: python3 -m unittest discover -s tools/tests -v

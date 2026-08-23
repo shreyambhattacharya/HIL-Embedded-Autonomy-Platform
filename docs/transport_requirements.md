@@ -2,7 +2,15 @@
 
 ## Status and scope
 
-This document derives a provisional transport envelope from the Milestone 2 software-boundary measurements. It specifies requirements for a future Raspberry Pi 5 to STM32 link; it does not implement a packet format, UART driver, bridge, firmware, or safety mechanism. Every numerical item below is classified as measured, derived, provisional, or TBD.
+This document derives a provisional transport envelope from the Milestone 2 software-boundary measurements. It specifies requirements for a Raspberry Pi 5/Linux bridge to STM32 link. The concrete Version 1 packet format, Linux serial bridge, and STM32 implementation are staged under Milestone 4A; see [`docs/protocol.md`](protocol.md) for the normative wire contract.
+
+The tables and analytical budget below are retained as historical measured, derived, provisional, or TBD planning evidence. They were written before a concrete encoding was selected and must not be read as a claim that the physical UART has passed validation. Actual encoded sizes, latency, loss, watchdog, reset, and fault-injection measurements remain required on the NUCLEO-F446RE.
+
+## Implemented Version 1 boundary
+
+The current implementation uses COBS framing with a zero delimiter, CRC-16/CCITT-FALSE, explicit little-endian integer fields, IEEE-754 binary32 float fields, a 64-byte application payload limit, and a 96-byte encoded-frame limit. The portable C library is compiled into both `hil_serial_bridge` and the STM32 firmware. The default bring-up baud is 115200, selectable up to 460800 in the bridge; this is an initial configuration rather than a final transport requirement.
+
+The STM32 enforces local monotonic freshness: command age is limited to 100 ms and wheel-feedback age to 50 ms while ACTIVE. A stale stream forces zero effort and SAFE. ARM is an explicit mode transaction and requires a compatible link, fresh command and feedback, and no blocking fault. These are software behaviors awaiting target and fault-injection evidence.
 
 ## Measurement basis
 
@@ -31,7 +39,9 @@ These are measured host observations, not wire latency or target-hardware timing
 
 The command and feedback safety limits dominate the slower 10 Hz heartbeat. A heartbeat receiver may declare the supervisory link degraded after three missed heartbeats (300 ms), but it must not delay a command- or feedback-loss safe transition.
 
-## Provisional frame semantics
+## Historical provisional frame semantics
+
+The following requirement set predates the concrete Version 1 format. The selected fields and encoding are now specified in `docs/protocol.md`.
 
 Every control-relevant frame should carry:
 

@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Launch Gazebo with the physical STM32 serial-controller path."""
+
+import os
+
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, SetEnvironmentVariable
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+
+def _launch_setup(context, *args, **kwargs):
+    del args, kwargs
+    simulation_share = get_package_share_directory("hil_simulation")
+    control_share = get_package_share_directory("hil_control_stub")
+    description_share = get_package_share_directory("hil_description")
+    ros_gz_sim_share = get_package_share_directory("ros_gz_sim")
+    world_path = os.path.join(simulation_share, "worlds", "baseline.sdf")
+    bridge_path = os.path.join(simulation_share, "config", "bridge.yaml")
+    motion_path = os.path.join(control_share, "config", "motion_test.yaml")
+    model_resource_path = os.path.join(description_share, "models")
+    existing_resource_path = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
+    resource_path = model_resource_path + (os.pathsep + existing_resource_path if existing_resource_path else "")
+    headless = LaunchConfiguration("headless").perform(context).lower() == "true"
+    gz_flags = "-r -v3 " + ("-s " if headless else "") + world_path
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(ros_gz_sim_share, "launch", "gz_sim.launch.py")),
+        launch_arguments={"gz_args": gz_flags, "on_exit_shutdown": "true"}.items(),
+    )
+    bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        name="milestone_04a_gz_bridge",
+        parameters=[{"config_file": bridge_path}],
+        output="screen",
+    )
+    motion = Node(
+        package="hil_control_stub",
+        executable="motion_test_node",
+        name="motion_test_node",
+        parameters=[motion_path, {"use_sim_time": True, "autostart": LaunchConfiguration("motion_autostart")}],
+        output="screen",
+    )
+    serial = Node(
+        package="hil_serial_bridge",
+        executable="hil_serial_bridge",
+        name="hil_serial_bridge",
+        parameters=[{
+            "serial_device": LaunchConfiguration("serial_device"),
+            "baud_rate": LaunchConfiguration("baud_rate"),
+        }],
+        output="screen",
+    )
+    return [SetEnvironmentVariable(name="GZ_SIM_RESOURCE_PATH", value=resource_path), gazebo, bridge, motion, serial]
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument("headless", default_value="false"),
+        DeclareLaunchArgument("motion_autostart", default_value="false"),
+        DeclareLaunchArgument("serial_device", default_value="/dev/ttyACM0"),
+        DeclareLaunchArgument("baud_rate", default_value="115200"),
+        OpaqueFunction(function=_launch_setup),
+    ])
