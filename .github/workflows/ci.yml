@@ -22,7 +22,8 @@ jobs:
       - name: Build workspace and run package tests
         uses: ros-tooling/action-ros-ci@v0.4
         with:
-          package-name: hil_control_stub hil_description hil_pi_runtime hil_serial_bridge hil_simulation
+          import-token: ${{ secrets.GITHUB_TOKEN }}
+          package-name: hil_control_stub hil_description hil_pi_runtime hil_serial_bridge hil_simulation hil_autonomy
           target-ros2-distro: jazzy
           colcon-defaults: |
             {
