@@ -10,10 +10,9 @@
 #include "timing.h"
 #include "FreeRTOS.h"
 #include "queue.h"
-#include "stream_buffer.h"
 #include "task.h"
 
-#define RX_STREAM_CAPACITY 512U
+#define RX_DMA_CAPACITY 256U
 #define TX_QUEUE_LENGTH 8U
 #ifndef UART_BAUD_RATE
 #define UART_BAUD_RATE 115200U
@@ -68,9 +67,8 @@ typedef struct {
 static controller_context_t controller = {
   .state = HIL_STATE_WAIT_LINK,
 };
-static StaticStreamBuffer_t rx_stream_struct;
-static uint8_t rx_stream_storage[RX_STREAM_CAPACITY];
-static StreamBufferHandle_t rx_stream;
+static uint8_t rx_dma_storage[RX_DMA_CAPACITY] __attribute__((aligned(4)));
+static size_t rx_dma_read_index;
 static StaticQueue_t tx_queue_struct;
 static uint8_t tx_queue_storage[TX_QUEUE_LENGTH * sizeof(hil_protocol_frame_t)];
 static QueueHandle_t tx_queue;
@@ -167,7 +165,7 @@ static void led_set(bool on)
 
 static void gpio_uart_init(void)
 {
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_DMA1EN;
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
   (void)RCC->AHB1ENR;
 
@@ -181,12 +179,20 @@ static void gpio_uart_init(void)
   GPIOA->AFR[0] |= (7UL << (2U * 4U)) | (7UL << (3U * 4U));
   led_set(false);
 
+  DMA1_STREAM5->CR = 0U;
+  DMA1_HIFCR = 0x00000f40UL;
+  DMA1_STREAM5->NDTR = RX_DMA_CAPACITY;
+  DMA1_STREAM5->PAR = (uint32_t)(uintptr_t)&USART2->DR;
+  DMA1_STREAM5->M0AR = (uint32_t)(uintptr_t)rx_dma_storage;
+  DMA1_STREAM5->M1AR = 0U;
+  DMA1_STREAM5->FCR = 0U;
+  DMA1_STREAM5->CR = DMA_SxCR_CHSEL_4 | DMA_SxCR_CIRC | DMA_SxCR_MINC | DMA_SxCR_PL_HIGH;
+  DMA1_STREAM5->CR |= DMA_SxCR_EN;
+
   USART2->BRR = (configCPU_CLOCK_HZ + (UART_BAUD_RATE / 2U)) / UART_BAUD_RATE;
-  USART2->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE | USART_CR1_UE;
+  USART2->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
   USART2->CR2 = 0U;
-  USART2->CR3 = 0U;
-  NVIC_IPR[38U] = (uint8_t)configMAX_SYSCALL_INTERRUPT_PRIORITY;
-  NVIC_ISER1 |= (1UL << (38U - 32U));
+  USART2->CR3 = USART_CR3_DMAR;
 }
 
 static void uart_write_byte(uint8_t byte)
@@ -239,6 +245,18 @@ static void queue_pong(uint32_t token)
   }
 }
 
+static void queue_hello(void)
+{
+  hil_protocol_frame_t frame = {0};
+  frame.message_type = HIL_MSG_HELLO;
+  frame.payload_length = 10U;
+  frame.payload[0] = HIL_ROLE_STM32;
+  frame.payload[1] = HIL_PROTOCOL_VERSION;
+  put_u32(&frame.payload[2], controller.boot_id);
+  put_u32(&frame.payload[6], HIL_HELLO_CAP_TIMING_STATUS | HIL_HELLO_CAP_HARDWARE_WATCHDOG);
+  queue_frame(&frame);
+}
+
 static void process_hello(const hil_protocol_frame_t *frame)
 {
   if (frame->payload_length < 10U || frame->payload[0] != HIL_ROLE_LINUX_BRIDGE ||
@@ -254,6 +272,7 @@ static void process_hello(const hil_protocol_frame_t *frame)
   hil_safety_on_hello(&controller.safety);
   sync_safety_legacy();
   taskEXIT_CRITICAL();
+  queue_hello();
 }
 
 static void process_mode(const hil_protocol_frame_t *frame)
@@ -357,33 +376,28 @@ static void process_frame(const hil_protocol_frame_t *frame)
 
 void USART2_IRQHandler(void)
 {
-  BaseType_t higher_priority_task_woken = pdFALSE;
-  while ((USART2->SR & USART_SR_RXNE) != 0U) {
-    const uint8_t byte = (uint8_t)(USART2->DR & 0xffU);
-    if (xStreamBufferSendFromISR(
-        rx_stream, &byte, 1U, &higher_priority_task_woken) != 1U) {
-      ++runtime_metrics.rx_stream_drops;
-    }
-  }
-  if ((USART2->SR & USART_SR_ORE) != 0U) {
-    (void)USART2->DR;
-    ++runtime_metrics.uart_overruns;
-  }
-  portYIELD_FROM_ISR(higher_priority_task_woken);
 }
 
 static void uart_rx_task(void *argument)
 {
   (void)argument;
   for (;;) {
-    uint8_t byte = 0U;
-    if (xStreamBufferReceive(rx_stream, &byte, 1U, portMAX_DELAY) == 1U) {
+    const size_t dma_write_index =
+      RX_DMA_CAPACITY - (size_t)DMA1_STREAM5->NDTR;
+    while (rx_dma_read_index != dma_write_index) {
+      const uint8_t byte = rx_dma_storage[rx_dma_read_index];
+      rx_dma_read_index = (rx_dma_read_index + 1U) % RX_DMA_CAPACITY;
       hil_protocol_frame_t frame;
       const hil_protocol_result_t result = hil_protocol_decoder_feed(&decoder, byte, &frame);
       if (result == HIL_PROTOCOL_FRAME_READY) {
         process_frame(&frame);
       }
     }
+    if ((USART2->SR & USART_SR_ORE) != 0U) {
+      (void)USART2->DR;
+      ++runtime_metrics.uart_overruns;
+    }
+    vTaskDelay(pdMS_TO_TICKS(1U));
   }
 }
 
@@ -393,7 +407,8 @@ static void control_task(void *argument)
   TickType_t previous = xTaskGetTickCount();
   const hil_control_wheel_pair_t zero = {0.0F, 0.0F};
   for (;;) {
-    vTaskDelayUntil(&previous, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
+    const BaseType_t release_on_time = xTaskDelayUntil(
+      &previous, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     const uint32_t activation_cycles = timing_now_cycles();
     const uint32_t now_ms = uptime_ms();
     taskENTER_CRITICAL();
@@ -448,7 +463,7 @@ static void control_task(void *argument)
       }
       runtime_metrics.period_sum_us += period_us;
     }
-    if (execution_us >= CONTROL_PERIOD_US || period_us > (CONTROL_PERIOD_US + 1000U)) {
+    if (release_on_time == pdFALSE || execution_us >= CONTROL_PERIOD_US) {
       ++runtime_metrics.deadline_misses;
     }
     ++runtime_metrics.control_progress;
@@ -660,9 +675,8 @@ int main(void)
     controller.boot_id = ++boot_counter;
   }
   hil_protocol_decoder_init(&decoder);
-  rx_stream = xStreamBufferCreateStatic(RX_STREAM_CAPACITY, 1U, rx_stream_storage, &rx_stream_struct);
+  rx_dma_read_index = 0U;
   tx_queue = xQueueCreateStatic(TX_QUEUE_LENGTH, sizeof(hil_protocol_frame_t), tx_queue_storage, &tx_queue_struct);
-  configASSERT(rx_stream != NULL);
   configASSERT(tx_queue != NULL);
   gpio_uart_init();
   rx_task_handle = xTaskCreateStatic(

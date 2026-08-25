@@ -150,6 +150,86 @@ static void test_malformed_and_sequences(void)
   }
   assert(result == HIL_PROTOCOL_FRAME_READY);
   assert(output.message_type == HIL_MSG_HELLO && output.sequence == 0U);
+
+  source.message_type = HIL_MSG_CONTROL_COMMAND;
+  source.payload_length = 8U;
+  source.sequence = 1U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+  assert(decoder.counters.sequence_gaps == 1U);
+  assert(decoder.counters.duplicate_frames == 1U);
+  assert(decoder.counters.stale_frames == 1U);
+
+  source.message_type = HIL_MSG_HELLO;
+  source.payload_length = 0U;
+  source.sequence = 0U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+
+  source.message_type = HIL_MSG_CONTROL_COMMAND;
+  source.payload_length = 8U;
+  source.sequence = 1U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+  assert(decoder.counters.sequence_gaps == 1U);
+  assert(decoder.counters.duplicate_frames == 1U);
+  assert(decoder.counters.stale_frames == 1U);
+
+  source.sequence = 1U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_DUPLICATE);
+
+  source.sequence = 0U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_STALE);
+
+  hil_protocol_decoder_init(&decoder);
+  source.sequence = UINT32_MAX;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+  source.sequence = 0U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+  assert(decoder.counters.sequence_gaps == 0U);
+
+  source.message_type = HIL_MSG_HELLO;
+  source.payload_length = 0U;
+  source.sequence = 0U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+  source.message_type = HIL_MSG_CONTROL_COMMAND;
+  source.payload_length = 8U;
+  source.sequence = 1U;
+  assert(hil_protocol_encode_frame(&source, encoded, sizeof(encoded), &length));
+  for (size_t i = 0U; i < length; ++i) {
+    result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);
+  }
+  assert(result == HIL_PROTOCOL_FRAME_READY);
+
   encoded[length - 2U] ^= 0x01U;
   for (size_t i = 0U; i < length; ++i) {
     result = hil_protocol_decoder_feed(&decoder, encoded[i], &output);

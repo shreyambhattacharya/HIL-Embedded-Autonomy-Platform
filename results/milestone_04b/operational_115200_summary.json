@@ -1,0 +1,116 @@
+{
+  "schema": "hil.stm32.milestone4b.operational.v2",
+  "device": "/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575171525067054337-if02",
+  "hardware": "NUCLEO-F446RE NUF446RE$KU1",
+  "baud": 115200,
+  "command_rate_hz": 100.0,
+  "feedback_rate_hz": 100.0,
+  "firmware": {
+    "build": "firmware/stm32/build/hil_stm32_f446re.elf",
+    "text_bytes": 17860,
+    "data_bytes": 4,
+    "bss_bytes": 8508,
+    "elf_sha256": "01412526ba71ad1df47bf60a89d03d175099820a1ad12248827e9718d4f8fd1b",
+    "bin_sha256": "e61b3feea9920bfe3c0a1be2e60a5fff011a8f56b1f717ed77fa750c246da3c6",
+    "hex_sha256": "5ddbe4cd554da904ceedd84816fabd50e2b6f15dedeb66b8ef73ff431715a9eb",
+    "flash_verify": "OpenOCD verify/reset passed"
+  },
+  "runs": [
+    {
+      "run": 1,
+      "duration_s": 60.955955913,
+      "status": "complete",
+      "rx_valid_delta": 12002,
+      "transport_error_delta": {
+        "rx_crc": 0,
+        "rx_decode": 0,
+        "rx_length": 0,
+        "rx_version": 0,
+        "rx_duplicate": 0,
+        "rx_stale": 0,
+        "rx_gaps": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "timing_delta": {
+        "deadline_misses": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "host_decoder_errors_delta": 0,
+      "arm_ack_ok": true,
+      "disarm_ack_ok": true
+    },
+    {
+      "run": 2,
+      "duration_s": 60.955722457,
+      "status": "complete",
+      "rx_valid_delta": 12002,
+      "transport_error_delta": {
+        "rx_crc": 0,
+        "rx_decode": 0,
+        "rx_length": 0,
+        "rx_version": 0,
+        "rx_duplicate": 0,
+        "rx_stale": 0,
+        "rx_gaps": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "timing_delta": {
+        "deadline_misses": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "host_decoder_errors_delta": 0,
+      "arm_ack_ok": true,
+      "disarm_ack_ok": true
+    },
+    {
+      "run": 3,
+      "duration_s": 60.952218033,
+      "status": "complete",
+      "rx_valid_delta": 12002,
+      "transport_error_delta": {
+        "rx_crc": 0,
+        "rx_decode": 0,
+        "rx_length": 0,
+        "rx_version": 0,
+        "rx_duplicate": 0,
+        "rx_stale": 0,
+        "rx_gaps": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "timing_delta": {
+        "deadline_misses": 0,
+        "rx_stream_drops": 0,
+        "tx_queue_drops": 0,
+        "uart_overruns": 0
+      },
+      "host_decoder_errors_delta": 0,
+      "arm_ack_ok": true,
+      "disarm_ack_ok": true
+    }
+  ],
+  "timing_observations": {
+    "execution_min_us": 26,
+    "execution_max_us": 82,
+    "period_min_us": 9973,
+    "period_mean_us": 10020,
+    "period_max_us": 13000,
+    "deadline_metric": "actual FreeRTOS release/deadline misses",
+    "deadline_misses_delta_each_run": 0
+  },
+  "decision": "PASS",
+  "notes": [
+    "The baseline is taken only after HELLO/STATUS/TIMING synchronization and a quiescence interval.",
+    "A prior invalid device-path invocation was not counted as a characterization run.",
+    "The legacy rx_stream_drops field remained zero; the final firmware uses a 256-byte circular DMA RX ring polled every 1 ms."
+  ]
+}

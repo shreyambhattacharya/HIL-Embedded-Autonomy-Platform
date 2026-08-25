@@ -1,0 +1,32 @@
+{
+  "schema": "hil.stm32.milestone4b.physical_disconnect.v2",
+  "hardware": "NUCLEO-F446RE NUF446RE$KU1",
+  "usbipd_busid": "2-8",
+  "stable_device": "/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575171525067054337-if02",
+  "baud": 115200,
+  "before_disconnect": {
+    "bridge_state": "ACTIVE",
+    "safety_reason": "none",
+    "left_effort_observed": -0.0111985169
+  },
+  "disconnect": {
+    "physical_action": "USB cable unplugged by user",
+    "bridge_detection": "write failure",
+    "reconnect_behavior": "stable device unavailable; reconnect polling continued",
+    "fail_safe": "link_failure publishes zero effort and clears armed/session state"
+  },
+  "reconnect": {
+    "physical_action": "USB cable reconnected by user",
+    "usbipd_action": "attach --wsl --busid 2-8",
+    "linux_device_returned": "/dev/ttyACM0",
+    "bridge_reopened_stable_path": true,
+    "hello_retry_required": true,
+    "fresh_hello_session": true,
+    "arm_ack": true,
+    "post_reconnect_state": "ACTIVE",
+    "post_reconnect_safety_reason": "none",
+    "post_reconnect_boot_id": 4181182784,
+    "left_effort_observed": -0.0153666064
+  },
+  "decision": "PASS"
+}

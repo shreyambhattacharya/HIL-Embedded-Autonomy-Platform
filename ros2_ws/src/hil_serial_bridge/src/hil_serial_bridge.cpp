@@ -272,8 +272,10 @@ private:
     }
     tcflush(fd, TCIOFLUSH);
     serial_fd_ = fd;
+    tx_sequence_ = 0U;
     armed_ = false;
     have_boot_id_ = false;
+    hello_seen_ = false;
     hil_protocol_decoder_init(&decoder_);
     last_rx_time_ = Clock::now();
     link_down_ = false;
@@ -296,6 +298,7 @@ private:
     close_serial();
     armed_ = false;
     have_boot_id_ = false;
+    hello_seen_ = false;
     publish_zero_effort();
     publish_link_down(reason);
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "STM32 serial link failure: %s", reason);
@@ -369,6 +372,10 @@ private:
 
   void send_heartbeat()
   {
+    if (serial_fd_ >= 0 && !hello_seen_) {
+      send_hello();
+      return;
+    }
     hil_protocol_frame_t frame{};
     frame.message_type = HIL_MSG_HEARTBEAT;
     frame.payload_length = 5U;
@@ -382,9 +389,9 @@ private:
     if (serial_fd_ < 0) {
       return;
     }
-    pollfd descriptor{serial_fd_, POLLIN | POLLERR | POLLHUP, 0};
+    pollfd descriptor{serial_fd_, POLLIN | POLLERR, 0};
     const int ready = poll(&descriptor, 1, 0);
-    if (ready < 0 || (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+    if (ready < 0 || (descriptor.revents & (POLLERR | POLLNVAL)) != 0) {
       link_failure("poll");
       return;
     }
@@ -405,7 +412,6 @@ private:
         continue;
       }
       if (count == 0) {
-        link_failure("hangup");
         return;
       } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
         link_failure("read");
@@ -435,6 +441,7 @@ private:
       }
       const uint32_t boot_id = read_u32(&frame.payload[2]);
       observe_boot_id(boot_id);
+      hello_seen_ = true;
       armed_ = false;
       publish_zero_effort();
       publish_status("link=UP;state=WAIT_LINK;hello=STM32_F446RE;boot_id=" + std::to_string(boot_id));
@@ -571,7 +578,7 @@ private:
       response->message = "serial link unavailable; refusing ARM";
       return;
     }
-    if (mode == HIL_MODE_ARM && !have_boot_id_) {
+    if (mode == HIL_MODE_ARM && !hello_seen_) {
       response->success = false;
       response->message = "STM32 HELLO has not arrived; refusing ARM";
       return;
@@ -614,6 +621,7 @@ private:
   bool have_feedback_{false};
   bool armed_{false};
   bool have_boot_id_{false};
+  bool hello_seen_{false};
   uint32_t boot_id_{0U};
   uint32_t tx_sequence_{0U};
   uint32_t transaction_id_{0U};

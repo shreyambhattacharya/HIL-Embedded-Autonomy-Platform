@@ -70,15 +70,27 @@ typedef struct {
   __IO uint32_t GTPR;
 } USART_TypeDef;
 
+typedef struct {
+  __IO uint32_t CR;
+  __IO uint32_t NDTR;
+  __IO uint32_t PAR;
+  __IO uint32_t M0AR;
+  __IO uint32_t M1AR;
+  __IO uint32_t FCR;
+} DMA_Stream_TypeDef;
+
 #define IWDG ((IWDG_TypeDef *)0x40003000UL)
 #define GPIOA ((GPIO_TypeDef *)0x40020000UL)
 #define RCC ((RCC_TypeDef *)0x40023800UL)
 #define USART2 ((USART_TypeDef *)0x40004400UL)
+#define DMA1_STREAM5 ((DMA_Stream_TypeDef *)0x40026088UL)
+#define DMA1_HIFCR (*(volatile uint32_t *)0x4002600CUL)
 #define NVIC_ISER0 (*(volatile uint32_t *)0xE000E100UL)
 #define NVIC_ISER1 (*(volatile uint32_t *)0xE000E104UL)
 #define NVIC_IPR ((volatile uint8_t *)0xE000E400UL)
 
 #define RCC_AHB1ENR_GPIOAEN (1UL << 0U)
+#define RCC_AHB1ENR_DMA1EN (1UL << 21U)
 #define RCC_CSR_LPWRRSTF (1UL << 31U)
 #define RCC_CSR_WWDGRSTF (1UL << 30U)
 #define RCC_CSR_IWDGRSTF (1UL << 29U)
@@ -92,6 +104,12 @@ typedef struct {
 #define USART_CR1_TE (1UL << 3U)
 #define USART_CR1_RXNEIE (1UL << 5U)
 #define USART_CR1_UE (1UL << 13U)
+#define USART_CR3_DMAR (1UL << 6U)
+#define DMA_SxCR_EN (1UL << 0U)
+#define DMA_SxCR_CIRC (1UL << 8U)
+#define DMA_SxCR_MINC (1UL << 10U)
+#define DMA_SxCR_PL_HIGH (2UL << 16U)
+#define DMA_SxCR_CHSEL_4 (4UL << 25U)
 
 #endif
 #define RCC_CSR_PORRSTF (1UL << 27U)

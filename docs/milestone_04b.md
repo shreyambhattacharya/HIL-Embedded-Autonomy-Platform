@@ -1,57 +1,69 @@
-# Milestone 4B — STM32 timing, watchdog, and bridge hardening
+# Milestone 4B — STM32 timing, transport, watchdog, and bridge hardening
 
-## Scope
+## Decision
 
-This milestone hardens the real NUCLEO-F446RE (`NUF446RE$KU1`) controller without advancing to a later milestone. The STM32 remains the authority for command/feedback freshness, explicit ARM/DISARM, zero-effort behavior, and watchdog recovery. The Linux bridge mirrors link-down behavior and reconnects through the stable `/dev/serial/by-id` directory.
+Milestone 4B is complete on branch `milestone-04b-stm32-hardening`.
 
-The implementation is on branch `milestone-04b-stm32-hardening`. It is intentionally left uncommitted and unpushed for review.
+The required operational baud is 115200. Three valid 60-second runs at the required 100 Hz command and 100 Hz feedback rates passed with zero MCU transport-error deltas, zero queue/UART/DMA-drop deltas, zero host decoder-error deltas, and zero actual control deadline misses.
 
-## Implemented behavior
+## Implementation completed
 
-- DWT cycle-counter instrumentation measures control execution time and activation period with wrap-safe arithmetic.
-- `TIMING_STATUS` (message 11, 62-byte payload) reports safety state/reason, reset cause, boot ID, uptime, sample count, execution and period min/mean/max, deadline misses, transport drops/overruns, and task stack high-water marks.
-- `STATUS` is now a fixed 56-byte payload with explicit decoder and transport counters.
-- The safety module enters SAFE on stale command or feedback, manual disarm, protocol incompatibility, or internal error. A new HELLO clears prior streaming freshness, so a reboot cannot reuse stale inputs.
-- IWDG supervision refreshes only when the control task is making progress. The normal image uses a nominal approximately 500 ms timeout derived from the uncalibrated 32 kHz LSI.
-- `TEST_WATCHDOG=1` creates an intentional test image that withholds refresh after the hold interval.
-- The bridge accepts 115200/230400/460800/921600, resolves the ST-LINK VCP by-id directory, emits link-down zero effort on open/configure/read/timeout failure, and retries opening on a timer.
-- The FreeRTOS vendor tree retains only the V11.3.1 core, required headers, the GCC ARM_CM4F port, and license/version provenance.
+- Per-run counter accounting now records synchronized baseline, final, and uint32 wrap-safe delta values. Historical counters are not mistaken for errors in the current run.
+- A fresh host HELLO resets the STM32 session sequence state. The bridge resets its transmit sequence on every serial open, tracks HELLO readiness separately from timing/status reception, and retries HELLO until the STM32 responds.
+- The STM32 responds to a valid host HELLO and clears stale command/feedback freshness for the new session.
+- STM32 RX uses a 256-byte circular DMA ring polled every 1 ms. Hardware UART overrun and queue/drop telemetry remain visible.
+- Control timing uses FreeRTOS release/deadline behavior for the deadline metric. Raw period statistics remain available; the observed 13 ms maximum period is not counted as a miss when the task release and execution deadline were met.
+- The ROS bridge tolerates the Linux USB CDC-ACM `POLLHUP` behavior seen while the ST-Link VCP remains present, uses status/write failures for link loss, zeroes effort on link failure, and reconnects through the stable by-id path.
+- Hardware-validation tooling treats 115200 as required and higher bauds as experimental/informational. Experimental failures or not-run cases cannot turn a required pass into a pass or fail; the decision is explicit.
 
-## Validation commands
+## Required 115200 characterization
+
+Command used for each valid run:
 
 ```bash
-cmake -S common -B /tmp/hil-common-4b -DCMAKE_BUILD_TYPE=Debug
-cmake --build /tmp/hil-common-4b
-ctest --test-dir /tmp/hil-common-4b --output-on-failure
-
-make -C firmware/stm32 clean all BAUD=115200 TEST_WATCHDOG=0
 python3 tools/stm32/run_timing_characterization.py \
-  --device /dev/serial/by-id --baud 115200 --duration 10
-python3 tools/stm32/run_hardware_validation.py \
-  --device /dev/serial/by-id --bauds 115200,460800 --duration 10
-
-make -C firmware/stm32 clean all BAUD=115200 TEST_WATCHDOG=1
-# Flash the test image, observe reset_cause=3 and boot_id advancement, then
-# rebuild/flash the normal image before operating the board.
+  --device /dev/serial/by-id \
+  --baud 115200 \
+  --duration 60 \
+  --command-rate 100 \
+  --feedback-rate 100
 ```
 
-The Python tools emit schemas `hil.stm32.milestone4b.timing.v1` and `hil.stm32.milestone4b.validation.v1`. A baud case is not considered complete unless timing telemetry and both ARM and DISARM ACKs are observed.
+| Run | Measured duration | MCU valid-frame delta | MCU transport errors | Timing drops/overruns | Deadline delta | Host decoder delta | ARM/DISARM |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 60.956 s | 12,002 | 0 | 0 | 0 | 0 | pass/pass |
+| 2 | 60.956 s | 12,002 | 0 | 0 | 0 | 0 | pass/pass |
+| 3 | 60.952 s | 12,002 | 0 | 0 | 0 | 0 | pass/pass |
 
-## Physical evidence on the connected NUCLEO
+The detailed machine-readable record is [`results/milestone_04b/operational_115200_summary.json`](../results/milestone_04b/operational_115200_summary.json). The final DMA firmware was flashed and verified by OpenOCD. Image hashes are recorded in that file.
 
-OpenOCD 0.12.0 identified STLINK V2J46M33, STM32F446RE, approximately 3.25 V target power, 512 KiB flash, and verified the programmed image. The normal 115200 image was rebuilt and restored after the watchdog test.
+Observed timing across the runs: execution 26–82 us; raw activation period 9,973–13,000 us; mean period 10,020 us; actual release/deadline miss delta 0 in every run.
 
-| Case | Result |
-| --- | --- |
-| 115200, 10 s, 20 ms command/feedback stream period | ARM/DISARM ACKs and timing telemetry passed; `rx_crc=0`, `uart_overruns=0`, `rx_stream_drops=0`; latest timing observed execution max 186 us and period mean 10020–10021 us. The MCU counters recorded `rx_decode=2`, `rx_length=1`, `rx_gaps=3`, so this is functional evidence with a small framing margin, not a zero-error transport claim. |
-| 115200, 10 s, 30 ms stream period | ARM/DISARM ACKs and timing telemetry passed; no CRC failures or UART overruns; observed execution max 161 us and period mean 10024–10027 us. This lower-load run still recorded one decode/gap event at the MCU boundary. |
-| 460800, 10 s | Timing telemetry arrived, but ARM/DISARM handshakes did not complete. The MCU reported `rx_crc=1`, `rx_decode=804`, `rx_length=3`, and `uart_overruns=127`; this baud is rejected for the current ISR/transport implementation. |
-| Intentional watchdog image | Passed. At 115200, boot IDs advanced 17 → 18 → 19; successive reports carried `reset_cause=3` (IWDG) after approximately 3.4 s of the intentional holdoff. The normal image was restored afterward. |
+## Physical disconnect/reconnect
 
-The selected operational baud is 115200. The nominal transport characterization is not a clean zero-error pass, so any requirement for zero framing/gap counters at the full bridge stream rate remains open for a later tuning pass.
+The connected NUCLEO-F446RE was operated through the ROS 2 bridge at 115200 baud with the deterministic motion publisher, explicit ARM, and nonzero effort. The user unplugged and reconnected the USB cable. On disconnect, the bridge reported a write failure, removed the serial link, entered device-unavailable reconnect polling, and executed its zero-effort fail-safe. After the user reconnected the cable and usbipd bus `2-8` was reattached to WSL, `/dev/ttyACM0` returned under the stable by-id path. The bridge reopened, retried HELLO until synchronization, accepted ARM, returned to ACTIVE, and produced nonzero effort.
 
-## Remaining gate
+The physical evidence is [`results/milestone_04b/physical_disconnect_reconnect.json`](../results/milestone_04b/physical_disconnect_reconnect.json). A power-cycle on USB also advanced the boot ID and reported the expected power-on reset cause.
 
-The bridge reconnect code is implemented and the ROS bridge compiles, but a physical unplug/replug disconnect/reconnect run was not performed in this session. Raspberry Pi deployment is outside this STM32 hardening milestone. These omissions are reflected in the final decision below.
+## Bandwidth basis
 
-MILESTONE 4B INCOMPLETE
+For this protocol, wire bytes are `payload + 16`: 12-byte header, payload, 2-byte CRC, one COBS overhead byte, and the zero delimiter. At the required steady-state rates:
+
+- Linux → STM32: control 100 Hz × 24 B, wheel feedback 100 Hz × 24 B, and heartbeat 10 Hz × 21 B = 5,010 B/s = 50,100 8N1 bit/s, or 43.5% of 115200.
+- STM32 → Linux: wheel effort 100 Hz × 24 B, heartbeat 10 Hz × 21 B, status 10 Hz × 72 B, and timing 1 Hz × 78 B = 3,408 B/s = 34,080 8N1 bit/s, or 29.6% of 115200.
+- The UART is full duplex; combined traffic is 8,418 B/s, or 36.5% of the two-direction 230400 bit/s aggregate capacity. Transaction ACKs and HELLO frames are bounded setup/session overhead.
+
+The exact frame-size calculation and assumptions are documented in [`docs/transport_requirements.md`](transport_requirements.md).
+
+## Regression evidence
+
+- Python tool tests: 7/7 passed.
+- Portable CMake suite: protocol, control, and safety tests: 3/3 passed.
+- ROS 2 workspace rebuild: 5 packages completed.
+- Firmware build: `text=17,860`, `data=4`, `bss=8,508` bytes.
+- OpenOCD flash and verify: passed on STLINK V2J46M33 / STM32F446RE.
+- Watchdog behavior from the prior 4B evidence remains preserved; the DMA, session, and bridge changes do not alter watchdog supervision.
+
+Raspberry Pi deployment remains outside this milestone.
+
+MILESTONE 4B COMPLETE
