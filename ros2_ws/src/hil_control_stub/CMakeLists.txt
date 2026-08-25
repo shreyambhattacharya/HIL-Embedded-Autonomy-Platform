@@ -13,6 +13,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 add_library(hil_control_math src/control_math.cpp)
 target_include_directories(
@@ -22,19 +23,19 @@ target_include_directories(
 )
 
 add_executable(software_mcu_stub src/software_mcu_stub.cpp)
-target_link_libraries(software_mcu_stub PRIVATE hil_control_math)
+target_link_libraries(software_mcu_stub hil_control_math)
 target_include_directories(software_mcu_stub PRIVATE include)
 ament_target_dependencies(software_mcu_stub geometry_msgs rclcpp sensor_msgs std_msgs)
 
 add_executable(motion_test_node src/motion_test_node.cpp)
 target_include_directories(motion_test_node PRIVATE include)
-ament_target_dependencies(motion_test_node geometry_msgs rclcpp)
+ament_target_dependencies(motion_test_node geometry_msgs rclcpp std_srvs)
 
 install(
   TARGETS hil_control_math software_mcu_stub motion_test_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/ DESTINATION include)

@@ -1,0 +1,248 @@
+{
+  "aggregates": {
+    "command_age_median_ms": {
+      "maximum": 29.457788,
+      "mean": 25.2151097,
+      "median": 24.0265235,
+      "minimum": 20.46277,
+      "p95_across_runs": 29.457788,
+      "samples": 10,
+      "standard_deviation": 3.476916862960378,
+      "unit": "ms"
+    },
+    "command_age_p95_ms": {
+      "maximum": 49.672388,
+      "mean": 45.304937100000004,
+      "median": 44.089506,
+      "minimum": 40.49447,
+      "p95_across_runs": 49.672388,
+      "samples": 10,
+      "standard_deviation": 3.5301101757177626,
+      "unit": "ms"
+    },
+    "control_execution_max_ms": {
+      "maximum": 4.096879,
+      "mean": 1.9094548,
+      "median": 1.9033925,
+      "minimum": 0.842682,
+      "p95_across_runs": 4.096879,
+      "samples": 10,
+      "standard_deviation": 0.9505764080136735,
+      "unit": "ms"
+    },
+    "control_execution_median_ms": {
+      "maximum": 0.178211,
+      "mean": 0.1616636,
+      "median": 0.1630185,
+      "minimum": 0.144414,
+      "p95_across_runs": 0.178211,
+      "samples": 10,
+      "standard_deviation": 0.010889688274285507,
+      "unit": "ms"
+    },
+    "control_execution_p95_ms": {
+      "maximum": 0.543762,
+      "mean": 0.3351281,
+      "median": 0.31914699999999996,
+      "minimum": 0.275293,
+      "p95_across_runs": 0.543762,
+      "samples": 10,
+      "standard_deviation": 0.07575063324920495,
+      "unit": "ms"
+    },
+    "controller_period_max_ms": {
+      "maximum": 23.636083,
+      "mean": 13.9790374,
+      "median": 13.072271,
+      "minimum": 10.510505,
+      "p95_across_runs": 23.636083,
+      "samples": 10,
+      "standard_deviation": 3.7674093049789,
+      "unit": "ms"
+    },
+    "controller_period_median_ms": {
+      "maximum": 10.001089,
+      "mean": 9.9999399,
+      "median": 9.9997905,
+      "minimum": 9.998779,
+      "p95_across_runs": 10.001089,
+      "samples": 10,
+      "standard_deviation": 0.0007883540448300158,
+      "unit": "ms"
+    },
+    "controller_period_p95_ms": {
+      "maximum": 10.139553,
+      "mean": 10.1038546,
+      "median": 10.098839,
+      "minimum": 10.086167,
+      "p95_across_runs": 10.139553,
+      "samples": 10,
+      "standard_deviation": 0.01691800245760565,
+      "unit": "ms"
+    },
+    "feedback_age_median_ms": {
+      "maximum": 0.663283,
+      "mean": 0.5852482,
+      "median": 0.6062765,
+      "minimum": 0.47587,
+      "p95_across_runs": 0.663283,
+      "samples": 10,
+      "standard_deviation": 0.05691157728304886,
+      "unit": "ms"
+    },
+    "feedback_age_p95_ms": {
+      "maximum": 2.18168,
+      "mean": 1.4175444000000001,
+      "median": 1.1954815,
+      "minimum": 1.07712,
+      "p95_across_runs": 2.18168,
+      "samples": 10,
+      "standard_deviation": 0.39156467686171875,
+      "unit": "ms"
+    },
+    "imu_rate_hz": {
+      "maximum": 100.00588616163401,
+      "mean": 100.0029396214211,
+      "median": 100.00293789294318,
+      "minimum": 99.99999999999999,
+      "p95_across_runs": 100.00588616163401,
+      "samples": 10,
+      "standard_deviation": 0.003098634336547971,
+      "unit": "Hz"
+    },
+    "left_effort_rate_hz": {
+      "maximum": 111.64677523663943,
+      "mean": 104.12690483243914,
+      "median": 102.64185834267234,
+      "minimum": 100.25873221216041,
+      "p95_across_runs": 111.64677523663943,
+      "samples": 10,
+      "standard_deviation": 3.847013642428033,
+      "unit": "Hz"
+    },
+    "minimum_observed_margin_ms": {
+      "maximum": 9.157318,
+      "mean": 8.0905452,
+      "median": 8.096607500000001,
+      "minimum": 5.903121,
+      "p95_across_runs": 9.157318,
+      "samples": 10,
+      "standard_deviation": 0.9505764080136736,
+      "unit": "ms"
+    },
+    "odometry_rate_hz": {
+      "maximum": 50.00294481418223,
+      "mean": 50.00029458521835,
+      "median": 50.0,
+      "minimum": 49.99411833901894,
+      "p95_across_runs": 50.00294481418223,
+      "samples": 10,
+      "standard_deviation": 0.002575550331986187,
+      "unit": "Hz"
+    },
+    "right_effort_rate_hz": {
+      "maximum": 111.65362668392257,
+      "mean": 104.12821618654948,
+      "median": 102.64185834267234,
+      "minimum": 100.25873221216041,
+      "p95_across_runs": 111.65362668392257,
+      "samples": 10,
+      "standard_deviation": 3.848918894061039,
+      "unit": "Hz"
+    },
+    "scan_rate_hz": {
+      "maximum": 10.004143728171432,
+      "mean": 9.999053670512572,
+      "median": 9.998823667803787,
+      "minimum": 9.995268511947007,
+      "p95_across_runs": 10.004143728171432,
+      "samples": 10,
+      "standard_deviation": 0.0027792202393018346,
+      "unit": "Hz"
+    },
+    "target_to_effort_ms": {
+      "maximum": 11.00000000000012,
+      "mean": 5.600000000000094,
+      "median": 4.5000000000001705,
+      "minimum": 1.000000000000334,
+      "p95_across_runs": 11.00000000000012,
+      "samples": 10,
+      "standard_deviation": 3.59629438913628,
+      "unit": "ms"
+    },
+    "target_to_wheel_motion_ms": {
+      "maximum": 30.00000000000025,
+      "mean": 23.500000000000032,
+      "median": 22.00000000000024,
+      "minimum": 17.999999999999794,
+      "p95_across_runs": 30.00000000000025,
+      "samples": 10,
+      "standard_deviation": 3.9228674319800927,
+      "unit": "ms"
+    },
+    "target_twist_rate_hz": {
+      "maximum": 22.334845895456418,
+      "mean": 20.82576600238424,
+      "median": 20.52905481028899,
+      "minimum": 20.050567413418,
+      "p95_across_runs": 22.334845895456418,
+      "samples": 10,
+      "standard_deviation": 0.7707620175261118,
+      "unit": "Hz"
+    },
+    "wheel_states_rate_hz": {
+      "maximum": 999.2947399353513,
+      "mean": 983.5838573463132,
+      "median": 986.9806348621515,
+      "minimum": 957.3131348717046,
+      "p95_across_runs": 999.2947399353513,
+      "samples": 10,
+      "standard_deviation": 14.488718727490856,
+      "unit": "Hz"
+    }
+  },
+  "configuration": {
+    "controlled_load": {
+      "command": [
+        "bash",
+        "-c",
+        "trap 'exit 0' INT TERM; /usr/bin/taskset -c 0 /usr/bin/yes >/dev/null & /usr/bin/taskset -c 1 /usr/bin/yes >/dev/null & /usr/bin/taskset -c 2 /usr/bin/yes >/dev/null & /usr/bin/taskset -c 3 /usr/bin/yes >/dev/null & wait"
+      ],
+      "configured_cpu_load_percent_per_worker": 100,
+      "cpu_workers": 4,
+      "expected_host_logical_capacity_percent": 18.181818181818183,
+      "measured_cpu_utilization_percent": null,
+      "measurement_note": "capacity fraction is analytical; utilization was not sampled",
+      "tool": "taskset+yes"
+    },
+    "fresh_gazebo_per_run": true,
+    "maximum_attempts": 12,
+    "mode": "cpu-loaded",
+    "passing_runs_required": 10,
+    "run_timeout_sec": 120
+  },
+  "counts": {
+    "attempted": 10,
+    "failed": 0,
+    "invalid": 0,
+    "passed": 10
+  },
+  "result": "PASS",
+  "schema_version": 1,
+  "suite_metadata": {
+    "available_memory_kib_at_start": 15259016,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 155H",
+    "execution_environment": "WSL",
+    "gazebo_version": "Gazebo Sim, version 8.11.0\nCopyright (C) 2018 Open Source Robotics Foundation.\nReleased under the Apache 2.0 License.",
+    "git": {
+      "commit_sha": "2f2c483618bafd5f2f046dc6bdd24077a239545c",
+      "working_tree": "dirty"
+    },
+    "hostname": "shreyam2024",
+    "kernel_release": "6.18.33.2-microsoft-standard-WSL2",
+    "logical_cpu_count": 22,
+    "os_pretty_name": "Ubuntu 24.04.4 LTS",
+    "ros_distro": "jazzy",
+    "timestamp_utc": "2026-08-22T08:17:29.893664+00:00"
+  }
+}

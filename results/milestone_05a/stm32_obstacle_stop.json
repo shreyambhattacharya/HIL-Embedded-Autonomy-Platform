@@ -1,0 +1,20 @@
+{
+  "backend": "stm32",
+  "metrics": {
+    "autonomy_state_at_finish": "RUNNING",
+    "collision_state_at_finish": "STOP",
+    "final_return_error_m": 0.0,
+    "max_estimate_truth_position_error_m": 7.258235912122657e-19,
+    "max_raw_linear_speed_m_s": 0.2499999998861125,
+    "max_target_linear_speed_m_s": 0.0,
+    "minimum_front_distance_m": 0.6500399112701416,
+    "target_twist_zero_at_finish": true,
+    "truth_progress_after_collision_stop_m": 0.0,
+    "truth_samples": 11
+  },
+  "reason": "LiDAR collision filter held zero target twist at obstacle",
+  "scenario": "obstacle_stop",
+  "schema": "hil.autonomy.milestone5a.scenario.v1",
+  "status": "PASS",
+  "uses_ground_truth_for_control": false
+}

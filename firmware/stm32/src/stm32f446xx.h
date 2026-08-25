@@ -1,0 +1,116 @@
+#ifndef STM32F446XX_H
+#define STM32F446XX_H
+
+#include <stdint.h>
+
+#define __IO volatile
+
+typedef struct {
+  __IO uint32_t MODER;
+  __IO uint32_t OTYPER;
+  __IO uint32_t OSPEEDR;
+  __IO uint32_t PUPDR;
+  __IO uint32_t IDR;
+  __IO uint32_t ODR;
+  __IO uint32_t BSRR;
+  __IO uint32_t LCKR;
+  __IO uint32_t AFR[2];
+} GPIO_TypeDef;
+
+typedef struct {
+  __IO uint32_t CR;
+  __IO uint32_t PLLCFGR;
+  __IO uint32_t CFGR;
+  __IO uint32_t CIR;
+  __IO uint32_t AHB1RSTR;
+  __IO uint32_t AHB2RSTR;
+  __IO uint32_t AHB3RSTR;
+  uint32_t RESERVED0;
+  __IO uint32_t APB1RSTR;
+  __IO uint32_t APB2RSTR;
+  uint32_t RESERVED1[2];
+  __IO uint32_t AHB1ENR;
+  __IO uint32_t AHB2ENR;
+  __IO uint32_t AHB3ENR;
+  uint32_t RESERVED2;
+  __IO uint32_t APB1ENR;
+  __IO uint32_t APB2ENR;
+  uint32_t RESERVED3[2];
+  __IO uint32_t AHB1LPENR;
+  __IO uint32_t AHB2LPENR;
+  __IO uint32_t AHB3LPENR;
+  uint32_t RESERVED4;
+  __IO uint32_t APB1LPENR;
+  __IO uint32_t APB2LPENR;
+  uint32_t RESERVED5[2];
+  __IO uint32_t BDCR;
+  __IO uint32_t CSR;
+  __IO uint32_t SSCGR;
+  __IO uint32_t PLLI2SCFGR;
+  __IO uint32_t PLLSAICFGR;
+  __IO uint32_t DCKCFGR;
+  __IO uint32_t CKGATENR;
+  __IO uint32_t DCKCFGR2;
+} RCC_TypeDef;
+
+
+typedef struct {
+  __IO uint32_t KR;
+  __IO uint32_t PR;
+  __IO uint32_t RLR;
+  __IO uint32_t SR;
+} IWDG_TypeDef;
+typedef struct {
+  __IO uint32_t SR;
+  __IO uint32_t DR;
+  __IO uint32_t BRR;
+  __IO uint32_t CR1;
+  __IO uint32_t CR2;
+  __IO uint32_t CR3;
+  __IO uint32_t GTPR;
+} USART_TypeDef;
+
+typedef struct {
+  __IO uint32_t CR;
+  __IO uint32_t NDTR;
+  __IO uint32_t PAR;
+  __IO uint32_t M0AR;
+  __IO uint32_t M1AR;
+  __IO uint32_t FCR;
+} DMA_Stream_TypeDef;
+
+#define IWDG ((IWDG_TypeDef *)0x40003000UL)
+#define GPIOA ((GPIO_TypeDef *)0x40020000UL)
+#define RCC ((RCC_TypeDef *)0x40023800UL)
+#define USART2 ((USART_TypeDef *)0x40004400UL)
+#define DMA1_STREAM5 ((DMA_Stream_TypeDef *)0x40026088UL)
+#define DMA1_HIFCR (*(volatile uint32_t *)0x4002600CUL)
+#define NVIC_ISER0 (*(volatile uint32_t *)0xE000E100UL)
+#define NVIC_ISER1 (*(volatile uint32_t *)0xE000E104UL)
+#define NVIC_IPR ((volatile uint8_t *)0xE000E400UL)
+
+#define RCC_AHB1ENR_GPIOAEN (1UL << 0U)
+#define RCC_AHB1ENR_DMA1EN (1UL << 21U)
+#define RCC_CSR_LPWRRSTF (1UL << 31U)
+#define RCC_CSR_WWDGRSTF (1UL << 30U)
+#define RCC_CSR_IWDGRSTF (1UL << 29U)
+#define RCC_CSR_SFTRSTF (1UL << 28U)
+#define RCC_CSR_RMVF (1UL << 24U)
+#define RCC_APB1ENR_USART2EN (1UL << 17U)
+#define USART_SR_ORE (1UL << 3U)
+#define USART_SR_RXNE (1UL << 5U)
+#define USART_SR_TXE (1UL << 7U)
+#define USART_CR1_RE (1UL << 2U)
+#define USART_CR1_TE (1UL << 3U)
+#define USART_CR1_RXNEIE (1UL << 5U)
+#define USART_CR1_UE (1UL << 13U)
+#define USART_CR3_DMAR (1UL << 6U)
+#define DMA_SxCR_EN (1UL << 0U)
+#define DMA_SxCR_CIRC (1UL << 8U)
+#define DMA_SxCR_MINC (1UL << 10U)
+#define DMA_SxCR_PL_HIGH (2UL << 16U)
+#define DMA_SxCR_CHSEL_4 (4UL << 25U)
+
+#endif
+#define RCC_CSR_PORRSTF (1UL << 27U)
+#define RCC_CSR_BORRSTF (1UL << 26U)

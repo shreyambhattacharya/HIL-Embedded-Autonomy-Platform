@@ -8,3 +8,4 @@ motion_test_node:
     second_forward_duration_sec: 5.0
     forward_speed_m_s: 0.25
     turn_rate_rad_s: 0.5
+    autostart: true

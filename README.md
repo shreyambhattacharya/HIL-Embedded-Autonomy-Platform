@@ -1,12 +1,46 @@
 # HIL Embedded Autonomy Platform
 
-This repository is the starting point for a Hardware-in-the-Loop (HIL) embedded autonomy platform. The long-term system will partition high-level autonomy on a Raspberry Pi 5, real-time wheel control and safety on an STM32 with FreeRTOS, and the simulated physical plant on a laptop running Gazebo.
+This repository is a validated Hardware-in-the-Loop (HIL) embedded autonomy platform. It combines a deterministic Gazebo plant, ROS 2 Jazzy, a real STM32F446RE FreeRTOS controller, a portable binary UART transport, physical STM32 HIL, and a high-level wheel/IMU/LiDAR autonomy path.
 
-The project is intentionally being built in milestones. The current tree implements **Milestone 1 — Deterministic Simulation Foundation** only. It establishes a differential-drive rover, a ROS 2/Gazebo boundary, a temporary software low-level controller, and a repeatable motion profile. It does not contain hardware or claim hardware validation.
+Current status: Milestones 1, 2B, 3A software preparation, 4A, 4B, and 5A are complete. The software and physical-STM32 autonomy paths have both been validated, including waypoint tracking, LiDAR slowdown/stop behavior, watchdog/fault handling, and quantitative evidence.
 
-## Current milestone
+Physical Raspberry Pi validation and full distributed Pi + STM32 deployment remain deferred. This project does not claim SLAM, Nav2, global obstacle planning, or production real-time guarantees.
 
-Implemented in this milestone:
+## Milestone 5A — autonomy foundation
+
+Milestone 5A is complete. The `hil_autonomy` package contains a wheel/IMU-only estimator, configurable waypoint follower, LiDAR slowdown/stop/stale filter, software and physical-STM32 launch paths, deterministic scenarios, and machine-readable evidence. Software open-square repeatability is 5/5 PASS; physical STM32 open-square repeatability is 3/3 PASS; software and STM32 obstacle-stop evidence is PASS; stale-LiDAR zero-command evidence is PASS.
+
+Run the software path:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+ros2 launch hil_autonomy milestone_05a_software_test.launch.py
+```
+
+Run the real NUCLEO-F446RE path:
+
+```bash
+ros2 launch hil_autonomy milestone_05a_stm32_test.launch.py \
+  serial_device:=/dev/serial/by-id baud_rate:=115200
+```
+
+Ground truth is consumed only by the evaluator. The autonomy workload was validated on the laptop and through the physical STM32; Raspberry Pi validation remains deferred. See [docs/milestone_05a.md](docs/milestone_05a.md) for architecture, metrics, evidence, limitations, and the exact milestone decision.
+
+## Current system boundary
+
+```text
+Laptop:          Gazebo + ROS 2 autonomy + hil_serial_bridge
+                 (or the software controller for simulation-only runs)
+Physical STM32:  FreeRTOS, 100 Hz wheel control, safety, watchdog, UART
+Future Pi:       same autonomy + bridge workload on Raspberry Pi 5
+```
+
+The current physical HIL boundary is laptop/Gazebo/autonomy through the real NUCLEO-F446RE. Milestone 3A prepared the Pi software boundary, but physical Pi execution and distributed deployment are future work.
+
+## Implemented foundation
+
+Milestone 1 provides:
 
 - simple primitive-geometry rover model in Gazebo Harmonic SDF;
 - baseline world with fixed initial conditions and static reference objects;
@@ -14,22 +48,38 @@ Implemented in this milestone:
 - ROS 2/Gazebo communication through `ros_gz_bridge` YAML configuration;
 - wheel joint feedback, IMU, 2D GPU LiDAR, and ground-truth odometry;
 - `software_mcu_stub`, a temporary ROS 2 C++ wheel-speed controller;
-- `motion_test_node`, a deterministic command profile;
+- `motion_test_node`, a deterministic command profile with interactive autostart and a test Trigger service;
 - pure C++ unit tests for kinematics and effort limiting;
-- an optional ROS 2 smoke-test executable for a running stack.
+- an automated ROS 2 smoke test that owns readiness, stationary settling, profile triggering, phase checks, and final stop verification.
 
-Not implemented yet: Raspberry Pi software, UART, STM32 firmware, FreeRTOS, binary protocols, watchdogs, fault injection, cameras, ML, localization, planning, Nav2, and HIL hardware testing.
+The first Milestone 2 slice adds:
+
+- opt-in steady-clock controller period, command-age, and feedback-age diagnostics;
+- a self-contained characterization launch using the same deterministic command profile;
+- measured ROS topic rates and inter-arrival jitter;
+- observed target-to-effort and target-to-wheel-motion latency;
+- controller execution-time and execution-budget diagnostics;
+- isolated multi-run suites with retained failures and machine-readable aggregates;
+- 10-run normal and controlled-load baselines;
+- provisional Pi/STM32 transport requirements and analytical UART budgets.
+
+The portable Version 1 protocol, COBS framing, CRC-16, POSIX ROS 2 serial bridge, target-specific FreeRTOS firmware, physical UART, sustained-link, safety-fault, timing, and disconnect/reconnect evidence are documented in the Milestone 4A/4B records. Earlier milestone documents retain historical scope and limitations.
 
 ## Repository layout
 
 ```text
-docs/
-  architecture.md
-  milestone_01.md
+common/                 Portable protocol, control, and safety libraries
+firmware/stm32/         STM32F446RE FreeRTOS controller and safety firmware
 ros2_ws/src/
-  hil_description/     Rover SDF model and model assets
-  hil_simulation/      Baseline world, bridge, launch, smoke test
-  hil_control_stub/    Temporary controller, motion test, parameters, unit tests
+  hil_description/      Rover SDF model and assets
+  hil_simulation/       Gazebo worlds, bridges, launches, and regressions
+  hil_control_stub/     Temporary software controller and tests
+  hil_serial_bridge/    POSIX ROS 2 <-> STM32 UART bridge
+  hil_pi_runtime/       Raspberry Pi software-preparation boundary
+  hil_autonomy/         Estimator, waypoint follower, LiDAR safety filter
+tools/                  Characterization, STM32, and Milestone 5A runners
+results/                Compact milestone evidence; raw local data ignored
+docs/                   Architecture, protocol, setup, and milestone records
 ```
 
 ## Prerequisites
@@ -79,7 +129,13 @@ To run the same stack without the Gazebo GUI:
 ros2 launch hil_simulation milestone_01.launch.py headless:=true
 ```
 
-The launch starts the simulation running. Gazebo should show the rover driving forward, turning in place, driving forward again, and then stopping.
+To hold the rover at zero target velocity for stationary inspection:
+
+```bash
+ros2 launch hil_simulation milestone_01.launch.py motion_autostart:=false
+```
+
+The normal launch autostarts the profile. With autostart disabled, the node continuously publishes zero until the `/hil/test/start_motion` Trigger service is called.
 
 ## Tests
 
@@ -91,15 +147,47 @@ colcon test --event-handlers console_direct+
 colcon test-result --verbose
 ```
 
-For the running-stack smoke test, start the launch command in one terminal and quickly run this in a second terminal:
+Run the self-contained headless integration test:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 source ros2_ws/install/setup.bash
-ros2 run hil_simulation milestone_01_smoke_test
+ros2 launch hil_simulation milestone_01_test.launch.py
 ```
 
-The smoke test checks for wheel feedback, IMU, LiDAR, ground-truth odometry, actuator effort messages, finite numeric values, observable motion, and a return to zero actuator effort after the motion profile. It is an integration check against a running local simulation; it is not an HIL test.
+The test launch disables motion autostart. The smoke node waits for every required interface, observes stationary stability, triggers the profile, checks both forward phases and positive yaw, enforces the effort limit, validates IMU/LiDAR/odometry values, requires a final stop, and then stops Gazebo cleanly. It is a simulation integration test, not an HIL test.
+
+Run the initial Milestone 2 characterization:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+ros2 launch hil_simulation milestone_02_characterization.launch.py
+```
+
+This launch enables controller timing diagnostics only for the characterization run. It reports JSON metrics, applies broad regression thresholds, and shuts Gazebo down automatically. Topic intervals and response latency use simulation time; controller period and input-age measurements use a steady wall clock inside the controller.
+
+Run fresh-process repeatability suites from the repository root:
+
+```bash
+python3 tools/run_characterization_suite.py \
+  --runs 10 \
+  --mode normal \
+  --evidence-output results/milestone_02/normal_summary.json
+
+python3 tools/run_characterization_suite.py \
+  --runs 10 \
+  --max-attempts 12 \
+  --mode cpu-loaded \
+  --stress-workers 4 \
+  --evidence-output results/milestone_02/cpu_loaded_summary.json
+```
+
+The loaded runner uses `stress-ng` when installed and otherwise falls back to pinned standard `taskset` + `yes` workers. Its JSON records which tool and configuration were actually used; configured capacity is not reported as measured CPU utilization. Raw run JSON and logs are kept under `results/milestone_02/local/` and are ignored by Git. Run the runner's pure Python tests with:
+
+```bash
+python3 -m unittest discover -s tools/tests -v
+```
 
 Useful inspection commands while the stack is running:
 
@@ -114,6 +202,6 @@ ros2 topic echo /hil/actuator/left_effort
 
 ## Engineering status
 
-This repository was initially empty. The source and configuration files target Ubuntu 24.04 / ROS 2 Jazzy / Gazebo Harmonic, but the current Windows development host does not provide ROS 2, Gazebo, colcon, or CMake. Therefore, compilation and Gazebo execution must be verified on the target Linux environment; no hardware or benchmark result is implied by this source tree.
+The Milestone 1 build, control-math suite, SDF validation, Gazebo GUI/headless launch, ROS/Gazebo bridges, triggered deterministic profile, stationary state, and automated smoke test have been verified in WSL Ubuntu 24.04 with ROS 2 Jazzy and Gazebo Harmonic. Milestone 2B completed 10 normal and 10 moderate controlled-load fresh-Gazebo runs with all selected trials passing. These are software-only, host-specific observations; no hardware, real-time guarantee, or portable benchmark result is implied.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/milestone_01.md](docs/milestone_01.md) for the runtime boundary, parameters, interfaces, acceptance criteria, and limitations.
+See [docs/architecture.md](docs/architecture.md), [docs/milestone_01.md](docs/milestone_01.md), [docs/milestone_02.md](docs/milestone_02.md), [docs/milestone_02_repeatability.md](docs/milestone_02_repeatability.md), and [docs/transport_requirements.md](docs/transport_requirements.md) for the runtime boundary, parameters, interfaces, measurements, derived requirements, and limitations.
