@@ -28,3 +28,6 @@ Thumbs.db
 /build/
 /install/
 /log/
+results/milestone_05a/local/
+results/milestone_05a/*_run_*.json
+*.log

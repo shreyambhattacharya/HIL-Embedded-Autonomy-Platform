@@ -5,7 +5,7 @@
 - Authoritative checkout: `/home/shrey/projects/HIL-Embedded-Autonomy-Platform` in WSL Ubuntu 24.04.
 - Starting branch: `milestone-04b-stm32-hardening`.
 - Starting commit: `5b7995ff51ee427b7f89dae8e21a43c9955496db` (`Complete Milestone 4B transport hardening`).
-- Working tree: clean before creating `milestone-05a-autonomy-foundation`; Milestone 5A changes remain uncommitted and unpushed.
+- Working tree was clean before creating `milestone-05a-autonomy-foundation`; the Milestone 5A implementation was completed, pushed, and is now the validated project checkpoint.
 - STM32: physical NUCLEO-F446RE `NUF446RE$KU1` visible through `/dev/serial/by-id`, using the validated 115200 baud path.
 - Raspberry Pi: physically unavailable; no Pi execution is claimed.
 

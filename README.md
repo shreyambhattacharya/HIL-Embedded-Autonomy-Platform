@@ -1,14 +1,14 @@
 # HIL Embedded Autonomy Platform
 
-This repository is the starting point for a Hardware-in-the-Loop (HIL) embedded autonomy platform. The long-term system will partition high-level autonomy on a Raspberry Pi 5, real-time wheel control and safety on an STM32 with FreeRTOS, and the simulated physical plant on a laptop running Gazebo.
+This repository is a validated Hardware-in-the-Loop (HIL) embedded autonomy platform. It combines a deterministic Gazebo plant, ROS 2 Jazzy, a real STM32F446RE FreeRTOS controller, a portable binary UART transport, physical STM32 HIL, and a high-level wheel/IMU/LiDAR autonomy path.
 
-The project is intentionally being built in milestones. **Milestone 1 — Deterministic Simulation Foundation** is validated, and **Milestone 2B — Repeatability Characterization and Transport Requirements** is complete on the local software-only host. It measures the existing boundary before introducing transport or fault infrastructure. It does not contain hardware or claim hardware validation.
+Current status: Milestones 1, 2B, 3A software preparation, 4A, 4B, and 5A are complete. The software and physical-STM32 autonomy paths have both been validated, including waypoint tracking, LiDAR slowdown/stop behavior, watchdog/fault handling, and quantitative evidence.
 
-Milestone 4B is complete: the portable Version 1 protocol, POSIX ROS 2 serial bridge, and target-specific FreeRTOS firmware for the user-confirmed NUCLEO-F446RE have passed host/ARM builds, verified flashing, physical UART, sustained-link, safety-fault, timing, and disconnect/reconnect HIL gates.
+Physical Raspberry Pi validation and full distributed Pi + STM32 deployment remain deferred. This project does not claim SLAM, Nav2, global obstacle planning, or production real-time guarantees.
 
 ## Milestone 5A — autonomy foundation
 
-Milestone 5A is complete on branch `milestone-05a-autonomy-foundation`. The new `hil_autonomy` package contains a wheel/IMU-only estimator, configurable waypoint follower, LiDAR slowdown/stop/stale filter, software and physical-STM32 launch paths, deterministic scenarios, and machine-readable evidence. Software open-square repeatability is 5/5 PASS; physical STM32 open-square repeatability is 3/3 PASS; software and STM32 obstacle-stop evidence is PASS; stale-LiDAR zero-command evidence is PASS.
+Milestone 5A is complete. The `hil_autonomy` package contains a wheel/IMU-only estimator, configurable waypoint follower, LiDAR slowdown/stop/stale filter, software and physical-STM32 launch paths, deterministic scenarios, and machine-readable evidence. Software open-square repeatability is 5/5 PASS; physical STM32 open-square repeatability is 3/3 PASS; software and STM32 obstacle-stop evidence is PASS; stale-LiDAR zero-command evidence is PASS.
 
 Run the software path:
 
@@ -26,6 +26,17 @@ ros2 launch hil_autonomy milestone_05a_stm32_test.launch.py \
 ```
 
 Ground truth is consumed only by the evaluator. The autonomy workload was validated on the laptop and through the physical STM32; Raspberry Pi validation remains deferred. See [docs/milestone_05a.md](docs/milestone_05a.md) for architecture, metrics, evidence, limitations, and the exact milestone decision.
+
+## Current system boundary
+
+```text
+Laptop:          Gazebo + ROS 2 autonomy + hil_serial_bridge
+                 (or the software controller for simulation-only runs)
+Physical STM32:  FreeRTOS, 100 Hz wheel control, safety, watchdog, UART
+Future Pi:       same autonomy + bridge workload on Raspberry Pi 5
+```
+
+The current physical HIL boundary is laptop/Gazebo/autonomy through the real NUCLEO-F446RE. Milestone 3A prepared the Pi software boundary, but physical Pi execution and distributed deployment are future work.
 
 ## Implemented foundation
 
@@ -52,30 +63,23 @@ The first Milestone 2 slice adds:
 - 10-run normal and controlled-load baselines;
 - provisional Pi/STM32 transport requirements and analytical UART budgets.
 
-Milestone 4A currently provides:
-
-- `common/`: shared C protocol and controller-core libraries with host tests;
-- `ros2_ws/src/hil_serial_bridge/`: POSIX serial bridge and ROS ARM/DISARM/PING services;
-- `firmware/stm32/`: STM32F446RE FreeRTOS application, startup, linker script, and Make build;
-- `docs/protocol.md`, `docs/stm32_setup.md`, and `docs/milestone_04a.md`: wire contract, board setup, and evidence status.
-
-Optional target timing, physical disconnect, and paired A/B evidence remain open. Cameras, ML, localization, planning, and Nav2 are also outside the current scope.
+The portable Version 1 protocol, COBS framing, CRC-16, POSIX ROS 2 serial bridge, target-specific FreeRTOS firmware, physical UART, sustained-link, safety-fault, timing, and disconnect/reconnect evidence are documented in the Milestone 4A/4B records. Earlier milestone documents retain historical scope and limitations.
 
 ## Repository layout
 
 ```text
-docs/
-  milestone_02_repeatability.md
-  architecture.md
-  milestone_01.md
-  milestone_02.md
-  transport_requirements.md
-results/milestone_02/   Checked-in aggregate evidence; ignored local raw logs
-tools/                  Repeatability runner and pure Python unit tests
+common/                 Portable protocol, control, and safety libraries
+firmware/stm32/         STM32F446RE FreeRTOS controller and safety firmware
 ros2_ws/src/
-  hil_description/     Rover SDF model and model assets
-  hil_simulation/      Baseline world, bridge, launch, smoke test
-  hil_control_stub/    Temporary controller, motion test, parameters, unit tests
+  hil_description/      Rover SDF model and assets
+  hil_simulation/       Gazebo worlds, bridges, launches, and regressions
+  hil_control_stub/     Temporary software controller and tests
+  hil_serial_bridge/    POSIX ROS 2 <-> STM32 UART bridge
+  hil_pi_runtime/       Raspberry Pi software-preparation boundary
+  hil_autonomy/         Estimator, waypoint follower, LiDAR safety filter
+tools/                  Characterization, STM32, and Milestone 5A runners
+results/                Compact milestone evidence; raw local data ignored
+docs/                   Architecture, protocol, setup, and milestone records
 ```
 
 ## Prerequisites

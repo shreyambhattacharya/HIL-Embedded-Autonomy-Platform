@@ -35,6 +35,36 @@ Gazebo physical plant and sensors
       Gazebo physical plant
 ```
 
+## Current validated deployment - Milestone 5A
+
+The validated current boundary keeps high-level autonomy and the simulated plant on the laptop while using the real NUCLEO-F446RE as the low-level controller:
+
+```text
+CURRENT
+
+Laptop:                 Gazebo + ROS 2 autonomy + hil_serial_bridge
+                         (or software_mcu_stub for software-only runs)
+                                  |
+                             real UART / ST-Link VCP
+                                  v
+Physical NUCLEO-F446RE:  STM32F446RE FreeRTOS
+                         100 Hz wheel controller + safety + watchdog
+
+FUTURE
+
+Laptop:                 Gazebo
+                                  |
+                             ROS 2 / Ethernet
+                                  v
+Raspberry Pi 5:         autonomy + hil_serial_bridge
+                                  |
+                             real UART
+                                  v
+STM32:                  same real-time controller and safety boundary
+```
+
+Physical Raspberry Pi validation and distributed Pi + STM32 execution remain deferred. The current autonomy evidence is laptop Gazebo plus either the software controller or the physical STM32.
+
 ## Today — Milestone 1
 
 The temporary software node occupies the future low-level-controller boundary. It receives a body twist command and wheel feedback through ROS 2, computes wheel-speed targets, applies a P controller, clamps the resulting efforts, and publishes two independent effort commands. Gazebo consumes those effort commands at its wheel joints; it does not run a differential-drive controller for this rover.
@@ -86,7 +116,7 @@ The characterization node observes the boundary; it does not sit in the command 
 
 A pre-measurement ROS graph query warms Fast DDS endpoint discovery in this WSL environment before readiness is evaluated. This is discovery stabilization, not part of the measured control path. External-force disturbance injection, communication faults, and a transport adapter remain future work.
 
-## Current — Milestone 3 distributed Linux integration
+## Milestone 3 distributed Linux integration (software preparation)
 
 Milestone 3 introduces the first intended physical embedded-Linux participant while keeping the plant and temporary low-level controller on the laptop. The laptop launch deliberately omits the local deterministic command source; the Pi launch runs that existing source with wall time and adds a small integration witness.
 
@@ -107,7 +137,7 @@ Raspberry Pi 5 / Ubuntu Server 24.04 ARM64
 
 No Pi was reachable or configured during the software-preparation run. This section describes the intended runtime and its evidence procedure; it does not claim cross-host discovery or hardware execution.
 
-## Current — Milestone 4A STM32 UART integration
+## Milestone 4A STM32 UART integration (historical transport base)
 
 Milestone 4A adds the first concrete Linux-to-controller transport and an STM32F446RE FreeRTOS application while preserving the Milestone 1 software controller as a separate simulation path.
 
