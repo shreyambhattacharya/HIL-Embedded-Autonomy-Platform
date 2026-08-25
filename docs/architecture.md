@@ -119,7 +119,32 @@ ROS 2/Gazebo -> hil_serial_bridge -> USB serial/ST-LINK VCP
 
 The exact target is the user-confirmed NUCLEO-F446RE `NUF446RE$KU1`; firmware uses USART2 on PA2/PA3 through the board's ST-LINK VCP. `hil_serial_bridge` owns the POSIX serial device, COBS framing, CRC checking, sequence accounting, ROS-to-wire conversion, and zero-output simulation mirror when the device is absent or stale.
 
-The portable C protocol and control libraries are shared by the Linux bridge and STM32 firmware. The STM32 owns the real-time state machine, freshness watchdogs, wheel-effort computation, ACK handling, and safe zero outputs. Physical target validation is still pending ARM tooling, flashing, and retained board evidence.
+The portable C protocol and control libraries are shared by the Linux bridge and STM32 firmware. The STM32 owns the real-time state machine, freshness watchdogs, wheel-effort computation, ACK handling, and safe zero outputs. The physical NUCLEO-F446RE target has been flashed, verified, and exercised through the bridge at the validated 115200 baud configuration.
+
+## Current — Milestone 5A autonomy foundation
+
+Milestone 5A adds a Pi-targeted high-level workload while preserving the validated STM32 control boundary. The laptop currently hosts Gazebo, ROS 2 autonomy, and either the software controller or the serial bridge. The physical path is:
+
+```text
+wheel states + IMU -> state_estimator -> /hil/estimate/odom
+                                  -> waypoint_follower
+                                  -> /hil/autonomy/raw_twist
+LiDAR ---------------------------> collision_filter
+                                  -> /hil/control/target_twist
+                                  -> software_mcu_stub OR hil_serial_bridge
+                                  -> NUCLEO-F446RE STM32 -> Gazebo wheel effort
+```
+
+The estimator subscribes only to wheel states and IMU. The waypoint follower subscribes only to estimated odometry. The collision filter subscribes to raw twist and LiDAR. `/hil/ground_truth/odom` is subscribed to by the evaluator only for aligned metrics; it is never in the autonomy control graph. The autonomy launches omit `motion_test_node`, and the STM32 launch omits `software_mcu_stub`.
+
+The deployment seam is explicit:
+
+```text
+NOW:      Laptop = Gazebo + autonomy + bridge; STM32 = low-level control
+FUTURE:   Laptop = Gazebo; Pi = same autonomy + bridge; STM32 = same control
+```
+
+Milestone 5A is wheel/IMU state estimation, waypoint following, and reactive collision stopping. It is not SLAM, Nav2, global planning, camera perception, or Raspberry Pi validation.
 
 ## Package ownership
 
@@ -130,6 +155,7 @@ The portable C protocol and control libraries are shared by the Linux bridge and
 | `hil_control_stub` | Temporary software MCU controller, opt-in timing diagnostics, deterministic command source, parameters, and mathematical unit tests. |
 | `hil_pi_runtime` | Pi-side launch, deterministic source composition, status publisher, and diagnostic ping service; no Gazebo ownership. |
 | `hil_serial_bridge` | Linux POSIX serial endpoint, shared protocol, ROS control/sensor conversion, status, and ARM/DISARM/PING services. |
+| `hil_autonomy` | Wheel/IMU estimator, waypoint follower, LiDAR collision filter, autonomy launch paths, pure tests, scenario evaluator, and evidence runner. |
 
 ## Coordinate frames
 
@@ -160,6 +186,18 @@ world
 | `/hil/sensors/imu` | `sensor_msgs/msg/Imu` | Gazebo -> ROS | Simulated IMU at `imu_link`. |
 | `/hil/sensors/scan` | `sensor_msgs/msg/LaserScan` | Gazebo -> ROS | Simulated planar GPU LiDAR at `lidar_link`. |
 | `/hil/ground_truth/odom` | `nav_msgs/msg/Odometry` | Gazebo -> test | Ground-truth 2D pose and twist in `world` / `base_link`. |
+
+Milestone 5A autonomy interfaces:
+
+| ROS interface | ROS type | Direction | Meaning |
+| --- | --- | --- | --- |
+| `/hil/estimate/odom` | `nav_msgs/msg/Odometry` | estimator -> follower/evaluator | Local wheel/IMU odometry; no ground-truth input. |
+| `/hil/estimate/valid` | `std_msgs/msg/Bool` | estimator -> follower | Freshness/validity gate for estimated state. |
+| `/hil/autonomy/start` | `std_srvs/srv/Trigger` | operator/evaluator -> follower | Explicitly starts waypoint tracking. |
+| `/hil/autonomy/stop` | `std_srvs/srv/Trigger` | operator/evaluator -> follower | Stops tracking and publishes zero raw command. |
+| `/hil/autonomy/raw_twist` | `geometry_msgs/msg/Twist` | follower -> collision filter | Unfiltered high-level body command. |
+| `/hil/control/target_twist` | `geometry_msgs/msg/Twist` | collision filter -> controller backend | Exactly one intended autonomy command output. |
+| `/hil/autonomy/collision_state` | `std_msgs/msg/String` | collision filter -> evaluator | `CLEAR`, `SLOWDOWN`, `STOP`, `STALE`, or `INVALID`. |
 
 Opt-in Milestone 2 diagnostics use `std_msgs/msg/Float64`:
 

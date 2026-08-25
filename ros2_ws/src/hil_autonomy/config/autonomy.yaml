@@ -1,0 +1,33 @@
+state_estimator_node:
+  ros__parameters:
+    wheel_radius_m: 0.18
+    wheel_separation_m: 0.86
+    imu_yaw_weight: 0.25
+    sensor_timeout_sec: 0.35
+    max_sample_dt_sec: 0.20
+    publish_rate_hz: 50.0
+    left_joint_name: left_wheel_joint
+    right_joint_name: right_wheel_joint
+    odom_frame: hil_estimate_odom
+    base_frame: base_link
+
+waypoint_follower_node:
+  ros__parameters:
+    waypoint_x_m: [1.0, 1.0, 0.0, 0.0]
+    waypoint_y_m: [0.0, 1.0, 1.0, 0.0]
+    waypoint_tolerance_m: 0.10
+    heading_kp: 2.0
+    linear_kp: 1.5
+    max_linear_m_s: 0.25
+    max_angular_rad_s: 0.8
+    turn_in_place_error_rad: 0.65
+    publish_rate_hz: 20.0
+    estimate_timeout_sec: 0.5
+
+collision_filter_node:
+  ros__parameters:
+    publish_rate_hz: 20.0
+    scan_timeout_sec: 0.50
+    front_sector_half_angle_rad: 0.70
+    stop_distance_m: 0.75
+    slow_distance_m: 1.20

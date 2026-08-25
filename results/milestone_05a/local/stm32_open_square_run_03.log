@@ -1,0 +1,102 @@
+[INFO] [launch]: All log files can be found below /home/shrey/.ros/log/2026-08-25-01-17-49-246687-shreyam2024-28811
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [28814]
+[INFO] [parameter_bridge-2]: process started with pid [28815]
+[INFO] [hil_serial_bridge-3]: process started with pid [28817]
+[INFO] [state_estimator_node-4]: process started with pid [28818]
+[INFO] [waypoint_follower_node-5]: process started with pid [28819]
+[INFO] [collision_filter_node-6]: process started with pid [28820]
+[INFO] [milestone_05a_evaluator-7]: process started with pid [28821]
+[hil_serial_bridge-3] [INFO] [1787645870.165486924] [hil_serial_bridge]: opened STM32 serial device /dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066FFF575171525067054337-if02
+[hil_serial_bridge-3] [INFO] [1787645870.165875826] [hil_serial_bridge]: serial bridge configured: device=/dev/serial/by-id baud=115200 command=100.0 Hz feedback=100.0 Hz
+[waypoint_follower_node-5] [INFO] [1787645870.807891510] [waypoint_follower_node]: waypoint follower ready; waiting for /hil/autonomy/start
+[state_estimator_node-4] [INFO] [1787645871.037817319] [state_estimator_node]: wheel/IMU-only estimator publishing /hil/estimate/odom
+[gazebo-1] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.11.0[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/shrey/projects/HIL-Embedded-Autonomy-Platform/ros2_ws/install/hil_simulation/share/hil_simulation/worlds/baseline.sdf[0m[1;32m].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/baseline/create_multiple[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/baseline/create_multiple/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/baseline/remove[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/baseline/remove/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/baseline/set_pose[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/baseline/set_pose/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/baseline/set_pose_vector[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/baseline/set_pose_vector/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/baseline/light_config[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/baseline/light_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/baseline/set_physics[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/baseline/set_physics/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/baseline/set_spherical_coordinates[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/baseline/set_spherical_coordinates/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/baseline/enable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/baseline/enable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/baseline/disable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/baseline/disable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/baseline/visual_config[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/baseline/visual_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/baseline/wheel_slip[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/baseline/wheel_slip/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mApplyJointForce subscribing to Double messages on [[0m[1;32m/model/hil_rover/joint/left_wheel_joint/cmd_force[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mApplyJointForce subscribing to Double messages on [[0m[1;32m/model/hil_rover/joint/right_wheel_joint/cmd_force[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing odometry on [[0m[1;32m/hil/gz/ground_truth/odom[0m[1;32m][0m[1;32m[0m
+[collision_filter_node-6] [INFO] [1787645871.164786931] [collision_filter_node]: LiDAR safety filter ready; output=/hil/control/target_twist
+[milestone_05a_evaluator-7] [INFO] [1787645872.191469550] [milestone_05a_evaluator]: evaluating scenario=open_square backend=stm32 output=/home/shrey/projects/HIL-Embedded-Autonomy-Platform/results/milestone_05a/local/stm32_open_square_run_03.json
+[parameter_bridge-2] [INFO] [1787645872.520027681] [milestone_05a_gz_bridge]: Creating GZ->ROS Bridge: [/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.524004335] [milestone_05a_gz_bridge]: Creating GZ->ROS Bridge: [/hil/gz/wheel_states (gz.msgs.Model) -> /hil/sensors/wheel_states (sensor_msgs/msg/JointState)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.529564730] [milestone_05a_gz_bridge]: Creating GZ->ROS Bridge: [/hil/gz/imu (gz.msgs.IMU) -> /hil/sensors/imu (sensor_msgs/msg/Imu)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.533128192] [milestone_05a_gz_bridge]: Creating GZ->ROS Bridge: [/hil/gz/scan (gz.msgs.LaserScan) -> /hil/sensors/scan (sensor_msgs/msg/LaserScan)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.536823545] [milestone_05a_gz_bridge]: Creating GZ->ROS Bridge: [/hil/gz/ground_truth/odom (gz.msgs.Odometry) -> /hil/ground_truth/odom (nav_msgs/msg/Odometry)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.541330316] [milestone_05a_gz_bridge]: Creating ROS->GZ Bridge: [/hil/actuator/left_effort (std_msgs/msg/Float64) -> /model/hil_rover/joint/left_wheel_joint/cmd_force (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.544512588] [milestone_05a_gz_bridge]: Creating ROS->GZ Bridge: [/hil/actuator/right_effort (std_msgs/msg/Float64) -> /model/hil_rover/joint/right_wheel_joint/cmd_force (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1787645872.551005613] [milestone_05a_gz_bridge]: Passing message from ROS std_msgs/msg/Float64 to Gazebo gz.msgs.Double (showing msg only once per type)
+[waypoint_follower_node-5] [INFO] [1787645875.870447005] [waypoint_follower_node]: autonomy start accepted
+[milestone_05a_evaluator-7] [INFO] [1787645875.970961267] [milestone_05a_evaluator]: autonomy run started
+[milestone_05a_evaluator-7] [INFO] [1787645924.681441835] [milestone_05a_evaluator]: MILESTONE 5A PASS: waypoint follower completed the open square
+[milestone_05a_evaluator-7] [INFO] [1787645924.682402643] [milestone_05a_evaluator]: {"backend": "stm32", "metrics": {"autonomy_state_at_finish": "COMPLETE", "collision_state_at_finish": "CLEAR", "final_return_error_m": 0.11352513058753502, "max_estimate_truth_position_error_m": 0.06446486789911643, "max_raw_linear_speed_m_s": 0.24999999999999964, "max_target_linear_speed_m_s": 0.24999999999999964, "minimum_front_distance_m": 1.8168011903762817, "target_twist_zero_at_finish": true, "truth_progress_after_collision_stop_m": null, "truth_samples": 482}, "reason": "waypoint follower completed the open square", "scenario": "open_square", "schema": "hil.autonomy.milestone5a.scenario.v1", "status": "PASS", "uses_ground_truth_for_control": false}
+[INFO] [milestone_05a_evaluator-7]: process has finished cleanly [pid 28821]
+[INFO] [gz-8]: process started with pid [29073]
+[gz-8] data: true
+[gz-8] 
+[INFO] [gz-8]: process has finished cleanly [pid 29073]
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing odometry with covariance on [[0m[1;32m/model/hil_rover/odometry_with_covariance[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing Pose_V (TF) on [[0m[1;32m/model/hil_rover/pose[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLoaded level [[0m[1;32mdefault[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/baseline[0m[1;32m/control], [[0m[1;32m/world/baseline[0m[1;32m/control/state] and [[0m[1;32m/world/baseline[0m[1;32m/playback/control][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mWorld [[0m[1;32mbaseline[0m[1;32m] initialized with [[0m[1;32mfixed_step[0m[1;32m] physics profile.[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world names on [[0m[1;32m/gazebo/worlds[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path add service on [[0m[1;32m/gazebo/resource_paths/add[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path get service on [[0m[1;32m/gazebo/resource_paths/get[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path resolve service on [[0m[1;32m/gazebo/resource_paths/resolve[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource paths published on [[0m[1;32m/gazebo/resource_paths[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServer control service on [[0m[1;32m/server_control[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /stats, adding root stats topic[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /clock, adding root clock topic[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mgz-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing scene information on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mscene/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing graph information on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mscene/graph[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing full state on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mstate[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing full state (async) on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mstate_async[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing scene information on [[0m[1;32m/world/baseline/scene/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing entity deletions on [[0m[1;32m/world/baseline/scene/deletion[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing state changes on [[0m[1;32m/world/baseline/state[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing pose messages on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mpose/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing dynamic pose messages on [[0m[1;32m/world/baseline[0m[1;32m/[0m[1;32mdynamic_pose/info[0m[1;32m][0m[1;32m[0m
+[INFO] [gazebo-1]: process has finished cleanly [pid 28814]
+[INFO] [launch]: process[gazebo-1] was required: shutting down launched system
+[INFO] [collision_filter_node-6]: sending signal 'SIGINT' to process[collision_filter_node-6]
+[INFO] [waypoint_follower_node-5]: sending signal 'SIGINT' to process[waypoint_follower_node-5]
+[INFO] [state_estimator_node-4]: sending signal 'SIGINT' to process[state_estimator_node-4]
+[INFO] [hil_serial_bridge-3]: sending signal 'SIGINT' to process[hil_serial_bridge-3]
+[INFO] [parameter_bridge-2]: sending signal 'SIGINT' to process[parameter_bridge-2]
+[collision_filter_node-6] [INFO] [1787645925.572486687] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[waypoint_follower_node-5] [INFO] [1787645925.573313676] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[state_estimator_node-4] [INFO] [1787645925.573990853] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[hil_serial_bridge-3] [INFO] [1787645925.575217636] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[parameter_bridge-2] [INFO] [1787645925.576366086] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [parameter_bridge-2]: process has finished cleanly [pid 28815]
+[INFO] [state_estimator_node-4]: process has finished cleanly [pid 28818]
+[INFO] [waypoint_follower_node-5]: process has finished cleanly [pid 28819]
+[INFO] [collision_filter_node-6]: process has finished cleanly [pid 28820]
+[INFO] [hil_serial_bridge-3]: process has finished cleanly [pid 28817]

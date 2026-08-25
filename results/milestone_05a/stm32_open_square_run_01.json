@@ -1,0 +1,20 @@
+{
+  "backend": "stm32",
+  "metrics": {
+    "autonomy_state_at_finish": "COMPLETE",
+    "collision_state_at_finish": "CLEAR",
+    "final_return_error_m": 0.11352263513934271,
+    "max_estimate_truth_position_error_m": 0.0631828806536165,
+    "max_raw_linear_speed_m_s": 0.2499999999991855,
+    "max_target_linear_speed_m_s": 0.24999999999999514,
+    "minimum_front_distance_m": 1.8170826435089111,
+    "target_twist_zero_at_finish": true,
+    "truth_progress_after_collision_stop_m": null,
+    "truth_samples": 482
+  },
+  "reason": "waypoint follower completed the open square",
+  "scenario": "open_square",
+  "schema": "hil.autonomy.milestone5a.scenario.v1",
+  "status": "PASS",
+  "uses_ground_truth_for_control": false
+}

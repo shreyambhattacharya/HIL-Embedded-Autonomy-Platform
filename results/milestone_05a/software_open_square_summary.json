@@ -1,0 +1,26 @@
+{
+  "backend": "software",
+  "created_utc": "2026-08-25T08:09:20Z",
+  "notes": [
+    "All five scenario evidence files are PASS.",
+    "Run 05 launch return code -9 occurred during post-evidence Gazebo shutdown; the evaluator evidence was written as PASS before shutdown completed."
+  ],
+  "passing_runs": 5,
+  "requested_runs": 5,
+  "runs": [
+    {"evidence_path": "results/milestone_05a/local/software_open_square_run_01.json", "launch_returncode": 0, "log_path": "results/milestone_05a/local/software_open_square_run_01.log", "run_number": 1, "status": "PASS"},
+    {"evidence_path": "results/milestone_05a/local/software_open_square_run_02.json", "launch_returncode": 0, "log_path": "results/milestone_05a/local/software_open_square_run_02.log", "run_number": 2, "status": "PASS"},
+    {"evidence_path": "results/milestone_05a/local/software_open_square_run_03.json", "launch_returncode": 0, "log_path": "results/milestone_05a/local/software_open_square_run_03.log", "run_number": 3, "status": "PASS"},
+    {"evidence_path": "results/milestone_05a/local/software_open_square_run_04.json", "launch_returncode": 0, "log_path": "results/milestone_05a/local/software_open_square_run_04.log", "run_number": 4, "status": "PASS"},
+    {"evidence_path": "results/milestone_05a/local/software_open_square_run_05.json", "launch_returncode": -9, "log_path": "results/milestone_05a/local/software_open_square_run_05.log", "run_number": 5, "status": "PASS"}
+  ],
+  "schema": "hil.autonomy.milestone5a.repeatability.v1",
+  "status": "PASS",
+  "valid_pass_metrics": [
+    {"completion_time_sec": 48.218303203582764, "final_return_error_m": 0.11404344404779848, "max_estimate_truth_position_error_m": 0.0634176640327947, "minimum_front_distance_m": 1.8171871900558472},
+    {"completion_time_sec": 48.338446855545044, "final_return_error_m": 0.11398723394097557, "max_estimate_truth_position_error_m": 0.06338280530271584, "minimum_front_distance_m": 1.8172552585601807},
+    {"completion_time_sec": 48.23936796188355, "final_return_error_m": 0.1130769780588043, "max_estimate_truth_position_error_m": 0.06250758042735373, "minimum_front_distance_m": 1.816757321357727},
+    {"completion_time_sec": 48.17107033729553, "final_return_error_m": 0.11422860646624051, "max_estimate_truth_position_error_m": 0.06357585143277845, "minimum_front_distance_m": 1.8168809413909912},
+    {"completion_time_sec": 48.259681940078735, "final_return_error_m": 0.11346056961816628, "max_estimate_truth_position_error_m": 0.06298151941460695, "minimum_front_distance_m": 1.8169853687286377}
+  ]
+}

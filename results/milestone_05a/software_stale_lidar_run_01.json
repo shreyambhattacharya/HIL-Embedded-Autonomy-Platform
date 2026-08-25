@@ -1,0 +1,20 @@
+{
+  "backend": "software",
+  "metrics": {
+    "autonomy_state_at_finish": "RUNNING",
+    "collision_state_at_finish": "STALE",
+    "final_return_error_m": 0.23337578836956308,
+    "max_estimate_truth_position_error_m": 0.001209912548895429,
+    "max_raw_linear_speed_m_s": 0.24999999995486094,
+    "max_target_linear_speed_m_s": 0.24999999994469949,
+    "minimum_front_distance_m": 0.0,
+    "target_twist_zero_at_finish": true,
+    "truth_progress_after_collision_stop_m": null,
+    "truth_samples": 31
+  },
+  "reason": "stale LiDAR caused a zero target twist",
+  "scenario": "stale_lidar",
+  "schema": "hil.autonomy.milestone5a.scenario.v1",
+  "status": "PASS",
+  "uses_ground_truth_for_control": false
+}

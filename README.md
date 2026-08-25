@@ -4,7 +4,28 @@ This repository is the starting point for a Hardware-in-the-Loop (HIL) embedded 
 
 The project is intentionally being built in milestones. **Milestone 1 — Deterministic Simulation Foundation** is validated, and **Milestone 2B — Repeatability Characterization and Transport Requirements** is complete on the local software-only host. It measures the existing boundary before introducing transport or fault infrastructure. It does not contain hardware or claim hardware validation.
 
-Milestone 4A now contains the portable Version 1 protocol, a POSIX ROS 2 serial bridge, and target-specific FreeRTOS firmware for the user-confirmed NUCLEO-F446RE. Host and ARM builds, USB debug passthrough, verified flashing, physical UART, sustained-link, safety-fault, and Gazebo HIL gates are validated; optional timing/disconnect/A-B measurements remain open.
+Milestone 4B is complete: the portable Version 1 protocol, POSIX ROS 2 serial bridge, and target-specific FreeRTOS firmware for the user-confirmed NUCLEO-F446RE have passed host/ARM builds, verified flashing, physical UART, sustained-link, safety-fault, timing, and disconnect/reconnect HIL gates.
+
+## Milestone 5A — autonomy foundation
+
+Milestone 5A is complete on branch `milestone-05a-autonomy-foundation`. The new `hil_autonomy` package contains a wheel/IMU-only estimator, configurable waypoint follower, LiDAR slowdown/stop/stale filter, software and physical-STM32 launch paths, deterministic scenarios, and machine-readable evidence. Software open-square repeatability is 5/5 PASS; physical STM32 open-square repeatability is 3/3 PASS; software and STM32 obstacle-stop evidence is PASS; stale-LiDAR zero-command evidence is PASS.
+
+Run the software path:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ros2_ws/install/setup.bash
+ros2 launch hil_autonomy milestone_05a_software_test.launch.py
+```
+
+Run the real NUCLEO-F446RE path:
+
+```bash
+ros2 launch hil_autonomy milestone_05a_stm32_test.launch.py \
+  serial_device:=/dev/serial/by-id baud_rate:=115200
+```
+
+Ground truth is consumed only by the evaluator. The autonomy workload was validated on the laptop and through the physical STM32; Raspberry Pi validation remains deferred. See [docs/milestone_05a.md](docs/milestone_05a.md) for architecture, metrics, evidence, limitations, and the exact milestone decision.
 
 ## Implemented foundation
 

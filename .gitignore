@@ -23,3 +23,8 @@ Thumbs.db
 *.d
 *.su
 *.lst
+
+# Generated local Milestone 5A evidence and colcon outputs
+/build/
+/install/
+/log/
